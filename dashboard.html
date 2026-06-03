@@ -108,6 +108,7 @@
       <option value="Апрель 2026" selected>April 2026</option>
     </select>
   </div>
+    </div>
   <div id="authSection">
     <button id="signInBtn" onclick="handleSignIn()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
@@ -140,24 +141,61 @@
     <div class="kpi-row" id="kpiRow"></div>
   </div>
 
-  <!-- ── BLOCK 1b: CASH ── -->
+  <!-- ── BLOCK 1b: CASH + HR METRICS ── -->
   <div class="section">
-    <div class="section-title">Cash Balances</div>
-    <div class="card">
-      <div class="cash-row">
-        <div class="cash-label">Account<br>Balances</div>
-        <div class="gauge-wrap">
-          <div class="gauge-name">🇨🇾 Cyprus</div>
-          <canvas class="gauge" id="gaugeCyprus"></canvas>
-          <div class="gauge-amount" id="cyprusAmt">—</div>
+    <div class="section-title">Cash Balances &amp; HR Metrics</div>
+    <div class="grid-2">
+
+      <!-- Cash left -->
+      <div class="card">
+        <div class="card-title">Account Balances</div>
+        <div class="cash-row" style="grid-template-columns:auto 1fr 1fr;">
+          <div class="cash-label">Balances</div>
+          <div class="gauge-wrap">
+            <div class="gauge-name">🇨🇾 Cyprus</div>
+            <canvas class="gauge" id="gaugeCyprus"></canvas>
+            <div class="gauge-amount" id="cyprusAmt">—</div>
+          </div>
+          <div class="gauge-wrap">
+            <div class="gauge-name">🇧🇾 RB</div>
+            <canvas class="gauge" id="gaugeRb"></canvas>
+            <div class="gauge-amount" id="rbAmt">—</div>
+          </div>
         </div>
-        <div class="gauge-wrap">
-          <div class="gauge-name">🇧🇾 RB</div>
-          <canvas class="gauge" id="gaugeRb"></canvas>
-          <div class="gauge-amount" id="rbAmt">—</div>
+        <div class="cash-summary" id="cashSummary"></div>
+      </div>
+
+      <!-- HR metrics right -->
+      <div class="card">
+        <div class="card-title">HR &amp; Cost Metrics</div>
+        <div class="card-sub">Current month</div>
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px;align-items:center;">
+          <!-- Cost structure pie -->
+          <div>
+            <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">Cost Structure by Functional Area</div>
+            <canvas id="costStructurePie" style="max-height:200px;"></canvas>
+          </div>
+          <!-- Metrics column -->
+          <div style="display:flex;flex-direction:column;gap:16px;padding-left:16px;">
+            <div style="border-left:3px solid #2563eb;padding-left:12px;">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Headcount</div>
+              <div id="headcountVal" style="font-size:30px;font-weight:700;color:#2563eb;line-height:1;">—</div>
+              <div id="headcountDelta" style="font-size:12px;color:#6b7280;margin-top:3px;"></div>
+            </div>
+            <div style="border-left:3px solid #2b6cb0;padding-left:12px;">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Payroll Fund</div>
+              <div id="payrollVal" style="font-size:22px;font-weight:700;color:#2b6cb0;line-height:1;">—</div>
+              <div id="payrollDelta" style="font-size:12px;margin-top:3px;"></div>
+            </div>
+            <div style="border-left:3px solid #4f8ef7;padding-left:12px;">
+              <div style="font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Revenue / Employee</div>
+              <div id="revPerEmpVal" style="font-size:22px;font-weight:700;color:#4f8ef7;line-height:1;">—</div>
+              <div id="revPerEmpDelta" style="font-size:12px;margin-top:3px;"></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="cash-summary" id="cashSummary"></div>
+
     </div>
   </div>
 
@@ -197,13 +235,14 @@
       </div>
       <div class="card">
         <div class="card-title">Revenue Stacked — Last 12 months</div>
-        <div class="card-sub">Thousand USD</div>
+        <div class="card-sub">Thousand USD · Total: <span id="stackTotal" style="font-weight:700;color:#2563eb;">—</span></div>
         <div class="filter-row">
           <button class="filter-btn active" onclick="setStackFilter('total',this)">Total</button>
           <button class="filter-btn" onclick="setStackFilter('coem',this)">COEM</button>
           <button class="filter-btn" onclick="setStackFilter('com',this)">COM</button>
         </div>
         <div class="chart-wrap"><canvas class="tall" id="revStack"></canvas></div>
+        <div class="summary-box" id="revStackSummary"></div>
       </div>
     </div>
   </div>
@@ -226,6 +265,19 @@
 Chart.register(ChartDataLabels);
 
 let RAW = null;
+
+// ── COLOR PALETTE ────────────────────────────────────────────────────────
+const C = {
+  uaCoem:    '#e53e3e',
+  uaCom:     '#fc8181',
+  costsCoem: '#2b6cb0',
+  costsCom:  '#4299e1',
+  ebitda:    '#9b72f5',
+  revenue:   '#4f8ef7',
+  plan:      '#c7d2e8',
+  actual:    '#4f8ef7',
+  pctLine:   '#f7a84f',
+};
 
 // ── HELPERS ──────────────────────────────────────────────────────────────
 const fmt = (v, unit='k') => {
@@ -322,10 +374,10 @@ function updateKPI(period) {
   }
 
   const kpis = [
-    { label:'Revenue', value: fmtM(totalRev), delta: deltaRev, positiveGood: true, color: '#4f8ef7' },
-    { label:'UA Spend', value: fmtM(totalUA), delta: deltaUA, positiveGood: false, color: '#f7a84f' },
-    { label:'Costs', value: fmtM(totalCosts), delta: deltaCosts, positiveGood: false, color: '#f45b69' },
-    { label:'EBITDA', value: fmtM(ebitda), delta: deltaEBITDA, positiveGood: true, color: ebitda >= 0 ? '#34c98e' : '#f45b69' },
+    { label:'Revenue', value: fmtM(totalRev), delta: deltaRev, positiveGood: true, color: C.revenue },
+    { label:'UA Spend', value: fmtM(totalUA), delta: deltaUA, positiveGood: false, color: C.uaCoem },
+    { label:'Costs', value: fmtM(totalCosts), delta: deltaCosts, positiveGood: false, color: C.costsCoem },
+    { label:'EBITDA', value: fmtM(ebitda), delta: deltaEBITDA, positiveGood: true, color: ebitda >= 0 ? C.ebitda : '#f45b69' },
   ];
 
   const row = document.getElementById('kpiRow');
@@ -354,7 +406,7 @@ function updateCash(period) {
   document.getElementById('rbAmt').textContent = fmtM(c.rb);
   const total = c.cyprus + c.rb;
   document.getElementById('cashSummary').innerHTML =
-    `Total account balance: <span class="hi">${fmtM(total)}</span>, of which <span class="warn">${fmtM(c.rb)}</span> in RB
+    `Total account balance: <span style="color:#4f8ef7;font-weight:700">${fmtM(total)}</span>, of which <span style="color:#9b72f5;font-weight:700">${fmtM(c.rb)}</span> in RB
      (funds reserved as payment contingency buffer)`;
 }
 
@@ -372,13 +424,13 @@ function updatePie(period) {
 
   const labels = ['UA COEM','UA COM','Costs COEM','Costs COM','EBITDA'];
   const values = [ua.coem, ua.com, costsCOEM, costsCOM, ebitda].map(v => Math.round(v/1000));
-  const colors = ['#f7a84f','#fbbf24','#4fd1c5','#4f8ef7','#9b72f5'];
+  const colors = ['#e53e3e','#fc8181','#2b6cb0','#4299e1','#9b72f5'];
 
   destroyChart('piePie');
   const ctx = document.getElementById('piePie').getContext('2d');
   charts['piePie'] = new Chart(ctx, {
     type: 'doughnut',
-    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#1a1d27' }] },
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
     options: {
       responsive: true,
       plugins: {
@@ -398,13 +450,13 @@ function updatePie(period) {
   });
 
   const totK = values.reduce((a,b)=>a+b,0);
-  const ebitdaPct = totK ? ((values[3]/totK)*100).toFixed(1) : 0;
+  const ebitdaPct = totK ? ((values[4]/totK)*100).toFixed(1) : 0;
   const uaCoemPct = totK ? ((values[0]/totK)*100).toFixed(1) : 0;
   const uaComPct  = totK ? ((values[1]/totK)*100).toFixed(1) : 0;
   const costPct   = totK ? (((values[2]+values[3])/totK)*100).toFixed(1) : 0;
   document.getElementById('pieSummary').innerHTML =
-    `EBITDA share: <span class="pos">${ebitdaPct}%</span> · UA COEM: <span class="or">${uaCoemPct}%</span> · UA COM: <span class="or">${uaComPct}%</span><br>
-     Total cost-to-revenue: <span class="neg">${costPct}%</span>, of which Costs COEM <span class="neg">${totK ? ((values[2]/totK)*100).toFixed(1) : 0}%</span> and Costs COM <span class="neg">${totK ? ((values[3]/totK)*100).toFixed(1) : 0}%</span>`;
+    `EBITDA share: <span style="color:${C.ebitda};font-weight:700">${ebitdaPct}%</span> · UA COEM: <span style="color:${C.uaCoem};font-weight:700">${uaCoemPct}%</span> · UA COM: <span style="color:${C.uaCom};font-weight:700">${uaComPct}%</span><br>
+     Total cost-to-revenue: <span style="color:${C.costsCoem};font-weight:700">${costPct}%</span>, of which Costs COEM <span style="color:${C.costsCoem};font-weight:700">${totK ? ((values[2]/totK)*100).toFixed(1) : 0}%</span> and Costs COM <span style="color:${C.costsCom};font-weight:700">${totK ? ((values[3]/totK)*100).toFixed(1) : 0}%</span>`;
 }
 
 // ── WATERFALL ─────────────────────────────────────────────────────────────
@@ -427,14 +479,14 @@ function updateWaterfall(period) {
   // Steps: Revenue COEM | -UA COEM | -Costs COEM | EBITDA1 | +Rev COM | -UA COM | -Costs COM | EBITDA
   let running = 0;
   const steps = [
-    { label: 'Rev COEM', val: revCOEM,    color: '#4f8ef7' },
-    { label: '-UA COEM', val: -uaCOEM,   color: '#f7a84f' },
-    { label: '-Costs COEM', val: -costsCOEM, color: '#4fd1c5' },
-    { label: 'EBITDA 1', val: null,      color: '#34c98e', isTotal: true, total: ebitda1 },
-    { label: '+Rev COM', val: revCOM,    color: '#4f8ef7' },
-    { label: '-UA COM',  val: -uaCOM,    color: '#f7a84f' },
-    { label: '-Costs COM', val: -costsCOM, color: '#9b72f5' },
-    { label: 'EBITDA',   val: null,      color: '#34c98e', isTotal: true, total: ebitdaFin },
+    { label: 'Rev COEM',    val: revCOEM,    color: C.revenue },
+    { label: '-UA COEM',    val: -uaCOEM,    color: C.uaCoem },
+    { label: '-Costs COEM', val: -costsCOEM, color: C.costsCoem },
+    { label: 'EBITDA 1',    val: null,       color: C.ebitda, isTotal: true, total: ebitda1 },
+    { label: '+Rev COM',    val: revCOM,     color: C.revenue },
+    { label: '-UA COM',     val: -uaCOM,     color: C.uaCom },
+    { label: '-Costs COM',  val: -costsCOM,  color: C.costsCom },
+    { label: 'EBITDA',      val: null,       color: C.ebitda, isTotal: true, total: ebitdaFin },
   ];
 
   const floatData = [];
@@ -442,7 +494,7 @@ function updateWaterfall(period) {
   steps.forEach(s => {
     if (s.isTotal) {
       floatData.push([0, s.total]);
-      bgColors.push(s.total >= 0 ? '#34c98e' : '#f45b69');
+      bgColors.push(s.total >= 0 ? C.ebitda : '#f45b69');
       running = s.total;
     } else {
       const base = running;
@@ -498,8 +550,8 @@ function updateWaterfall(period) {
   });
 
   document.getElementById('waterfallSummary').innerHTML =
-    `COEM: Revenue <span class="pos">${revCOEM}k</span> · UA <span class="neg">-${uaCOEM}k</span> · Costs <span class="neg">-${costsCOEM}k</span> → EBITDA 1 <span class="${ebitda1>=0?'pos':'neg'}">${ebitda1}k</span><br>
-     COM: Revenue <span class="pos">+${revCOM}k</span> · UA <span class="neg">-${uaCOM}k</span> · Costs <span class="neg">-${costsCOM}k</span> · Old Titles <span class="pos">+${oldTitles}k</span> → <b>Total EBITDA <span class="${ebitdaFin>=0?'pos':'neg'}">${ebitdaFin}k</span></b>`;
+    `COEM: Revenue <span style="color:${C.revenue};font-weight:700">${revCOEM}k</span> · UA <span style="color:${C.uaCoem};font-weight:700">-${uaCOEM}k</span> · Costs <span style="color:${C.costsCoem};font-weight:700">-${costsCOEM}k</span> → EBITDA 1 <span style="color:${C.ebitda};font-weight:700">${ebitda1}k</span><br>
+     COM: Revenue <span style="color:${C.revenue};font-weight:700">+${revCOM}k</span> · UA <span style="color:${C.uaCom};font-weight:700">-${uaCOM}k</span> · Costs <span style="color:${C.costsCom};font-weight:700">-${costsCOM}k</span> · Old Titles <span style="color:${C.revenue};font-weight:700">+${oldTitles}k</span> → <b>Total EBITDA <span style="color:${ebitdaFin>=0?C.ebitda:'#f45b69'};font-weight:700">${ebitdaFin}k</span></b>`;
 }
 
 // ── REVENUE BAR (YoY) ─────────────────────────────────────────────────────
@@ -579,14 +631,15 @@ function updateRevBar() {
   const cur = Math.round(getVal(curR) / 1000);
   const pyv = prevYearR ? Math.round(getVal(prevYearR)/1000) : null;
   const pmv = prevMonthR ? Math.round(getVal(prevMonthR)/1000) : null;
-  let txt = `Selected month revenue: <span class="hi">${cur}k USD</span>`;
+  const posC = C.revenue, negC = C.uaCoem;
+  let txt = `Selected month revenue: <span style="color:${C.revenue};font-weight:700">${cur}k USD</span>`;
   if (pyv) {
     const diff = cur - pyv; const pct = ((diff/pyv)*100).toFixed(1);
-    txt += `<br>vs same month last year: <span class="${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${diff}k (${pct}%)</span>`;
+    txt += `<br>vs same month last year: <span style="color:${diff>=0?posC:negC};font-weight:700">${diff>=0?'+':''}${diff}k (${pct}%)</span>`;
   }
   if (pmv) {
     const diff = cur - pmv; const pct = ((diff/pmv)*100).toFixed(1);
-    txt += `<br>vs previous month: <span class="${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${diff}k (${pct}%)</span>`;
+    txt += `<br>vs previous month: <span style="color:${diff>=0?posC:negC};font-weight:700">${diff>=0?'+':''}${diff}k (${pct}%)</span>`;
   }
   document.getElementById('revSummary').innerHTML = txt;
 }
@@ -628,6 +681,15 @@ function updateRevStack() {
     ];
   }
 
+  // Calculate and display total for last 12 months
+  const total12 = last12.reduce((sum, r) => {
+    if (stackFilter === 'coem') return sum + r.coem_inapp + r.coem_ads;
+    if (stackFilter === 'com')  return sum + r.com_inapp  + r.com_ads;
+    return sum + r.coem_inapp + r.coem_ads + r.com_inapp + r.com_ads + r.old_titles;
+  }, 0);
+  const el = document.getElementById('stackTotal');
+  if (el) el.textContent = (total12/1e6).toFixed(2) + 'M $';
+
   destroyChart('revStack');
   const ctx = document.getElementById('revStack').getContext('2d');
   charts['revStack'] = new Chart(ctx, {
@@ -638,10 +700,15 @@ function updateRevStack() {
       plugins: {
         legend: { labels: { color: '#6b7280', font:{size:11} } },
         datalabels: {
-          color: '#fff',
+          color: '#1a1f36',
           font: { size: 10, weight: 'bold' },
-          formatter: v => v > 20 ? v + 'k' : '',
-          anchor: 'center', align: 'center'
+          anchor: 'end', align: 'top',
+          // Show total per bar only on the last (top) dataset
+          display: (ctx) => ctx.datasetIndex === datasets.length - 1,
+          formatter: (v, ctx) => {
+            const total = datasets.reduce((sum, ds) => sum + (ds.data[ctx.dataIndex] || 0), 0);
+            return total > 0 ? total + 'k' : '';
+          }
         }
       },
       scales: {
@@ -650,6 +717,24 @@ function updateRevStack() {
       }
     }
   });
+
+  // Text summary: last 12 months vs previous 12 months
+  const getVal = r => stackFilter === 'coem' ? r.coem_inapp + r.coem_ads
+                    : stackFilter === 'com'  ? r.com_inapp  + r.com_ads
+                    : r.coem_inapp + r.coem_ads + r.com_inapp + r.com_ads + r.old_titles;
+  const all = RAW.revenue;
+  const prev12 = all.slice(-24, -12);
+  const tot12   = last12.reduce((s,r) => s + getVal(r), 0);
+  const totPrev = prev12.reduce((s,r) => s + getVal(r), 0);
+  const diff = tot12 - totPrev;
+  const pct  = totPrev ? ((diff / totPrev) * 100).toFixed(1) : null;
+  const diffStr = (diff >= 0 ? '+' : '') + (diff/1e6).toFixed(2) + 'M $';
+  const pctStr  = pct ? ` (${diff >= 0 ? '+' : ''}${pct}%)` : '';
+  const summaryEl = document.getElementById('revStackSummary');
+  if (summaryEl) {
+    summaryEl.innerHTML = `Revenue last 12 months: <span style="color:${C.revenue};font-weight:700">${(tot12/1e6).toFixed(2)}M $</span>`
+      + (totPrev ? ` · vs previous 12 months: <span style="color:${diff>=0?C.revenue:C.uaCoem};font-weight:700">${diffStr}${pctStr}</span>` : '');
+  }
 }
 
 // ── GOALS / BUDGET EXECUTION ──────────────────────────────────────────────
@@ -694,11 +779,11 @@ function updateGoals() {
     data: {
       labels,
       datasets: [
-        { label: 'Plan',   data: budgets, backgroundColor: '#c7d2e8', borderRadius: 4, order: 2 },
-        { label: 'Actual', data: actuals, backgroundColor: '#4f8ef7', borderRadius: 4, order: 2 },
+        { label: 'Plan',   data: budgets, backgroundColor: C.plan,    borderRadius: 4, order: 2 },
+        { label: 'Actual', data: actuals, backgroundColor: C.costsCoem, borderRadius: 4, order: 2 },
         { label: '% Execution', data: pcts, type: 'line', yAxisID: 'y2',
-          borderColor: '#f7a84f', backgroundColor: 'transparent',
-          pointBackgroundColor: '#f7a84f', borderWidth: 2, pointRadius: 5,
+          borderColor: C.pctLine, backgroundColor: 'transparent',
+          pointBackgroundColor: C.pctLine, borderWidth: 2, pointRadius: 5,
           tension: 0.3, order: 1 }
       ]
     },
@@ -712,7 +797,7 @@ function updateGoals() {
           }
         },
         datalabels: {
-          color: ctx => ctx.datasetIndex === 2 ? '#ea7c0a' : '#1a1f36',
+          color: ctx => ctx.datasetIndex === 2 ? C.pctLine : '#1a1f36',
           font: { size: 10, weight: 'bold' },
           anchor: ctx => ctx.datasetIndex === 2 ? 'center' : 'end',
           align: ctx => ctx.datasetIndex === 2 ? 'top' : 'top',
@@ -725,7 +810,7 @@ function updateGoals() {
       scales: {
         x: { ticks: { color: '#6b7280' }, grid: { color: '#e5e7ef' } },
         y: { ticks: { color: '#6b7280', callback: v => v + 'k' }, grid: { color: '#e5e7ef' }, position: 'left' },
-        y2: { ticks: { color: '#f7a84f', callback: v => v + '%' }, grid: { display: false }, position: 'right' }
+        y2: { ticks: { color: C.pctLine, callback: v => v + '%' }, grid: { display: false }, position: 'right' }
       }
     }
   });
@@ -736,7 +821,85 @@ function updateGoals() {
   const pct = c.budget > 0 ? ((c.actual/c.budget)*100).toFixed(1) : '—';
   const diff = Math.round((c.actual - c.budget)/1000);
   document.getElementById('goalsSummary').innerHTML =
-    `<b>${DEPT_LABELS[deptFilter]}</b> · ${selPeriod}: Plan <span class="hi">${Math.round(c.budget/1000)}k</span> · Actual <span class="${c.actual<=c.budget?'pos':'neg'}">${Math.round(c.actual/1000)}k</span> · Execution <span class="${parseFloat(pct)<=100?'pos':'neg'}">${pct}%</span> · Variance <span class="${diff<=0?'pos':'neg'}">${diff>=0?'+':''}${diff}k</span>`;
+    `<b>${DEPT_LABELS[deptFilter]}</b> · ${selPeriod}: Plan <span style="color:${C.plan};font-weight:700">${Math.round(c.budget/1000)}k</span> · Actual <span style="color:${C.costsCoem};font-weight:700">${Math.round(c.actual/1000)}k</span> · Execution <span style="color:${parseFloat(pct)<=100?C.revenue:C.uaCoem};font-weight:700">${pct}%</span> · Variance <span style="color:${diff<=0?C.revenue:C.uaCoem};font-weight:700">${diff>=0?'+':''}${diff}k</span>`;
+}
+
+// ── HR & COST METRICS ─────────────────────────────────────────────────────
+// PAYROLL and HEADCOUNT loaded dynamically from Google Sheets
+
+function updateHRMetrics(period) {
+  const rev    = getRevForPeriod(period);
+  const totalRev = rev ? (rev.coem_inapp + rev.coem_ads + rev.com_inapp + rev.com_ads + rev.old_titles) : 0;
+  const payroll  = (RAW.payroll && RAW.payroll[period]) ? RAW.payroll[period].actual : 0;
+  const cashNow = getCashForPeriod(period);
+  const HEADCOUNT = cashNow.headcount || 105;
+  const revPerEmp = HEADCOUNT > 0 ? Math.round(totalRev / HEADCOUNT) : 0;
+
+  // Previous period for deltas
+  const periods = RAW.available_periods;
+  const idx = periods.indexOf(period);
+  const prevP = idx > 0 ? periods[idx - 1] : null;
+  const prevPayroll = prevP && RAW.payroll && RAW.payroll[prevP] ? RAW.payroll[prevP].actual : null;
+  const prevRev = prevP ? getRevForPeriod(prevP) : null;
+  const prevTotalRev = prevRev ? (prevRev.coem_inapp + prevRev.coem_ads + prevRev.com_inapp + prevRev.com_ads + prevRev.old_titles) : 0;
+  const prevCash = prevP ? getCashForPeriod(prevP) : null;
+  const prevHC = prevCash ? (prevCash.headcount || HEADCOUNT) : HEADCOUNT;
+  const prevRevPerEmp = prevTotalRev > 0 ? Math.round(prevTotalRev / prevHC) : null;
+
+  // Headcount
+  document.getElementById('headcountVal').textContent = HEADCOUNT;
+
+
+
+  // Payroll
+  document.getElementById('payrollVal').textContent = '$' + Math.round(payroll).toLocaleString();
+  if (prevPayroll) {
+    const d = payroll - prevPayroll;
+    const pct = ((d / prevPayroll) * 100).toFixed(1);
+    const color = d <= 0 ? C.revenue : C.uaCoem;
+    document.getElementById('payrollDelta').innerHTML =
+      `<span style="color:${color};font-weight:600">${d >= 0 ? '+' : ''}${(d/1000).toFixed(1)}k (${pct}%) MoM</span>`;
+  }
+
+  // Revenue per employee
+  document.getElementById('revPerEmpVal').textContent = '$' + revPerEmp.toLocaleString();
+  if (prevRevPerEmp) {
+    const d = revPerEmp - prevRevPerEmp;
+    const pct = ((d / prevRevPerEmp) * 100).toFixed(1);
+    const color = d >= 0 ? C.revenue : C.uaCoem;
+    document.getElementById('revPerEmpDelta').innerHTML =
+      `<span style="color:${color};font-weight:600">${d >= 0 ? '+' : ''}$${Math.abs(d).toLocaleString()} (${pct}%) MoM</span>`;
+  }
+
+  // Cost structure pie: Front Office vs Back Office
+  const front = ['Production','Marketing','IT-Infrastructure'];
+  const back  = ['Operations','Finance & Legal','HR & Recruitment','BoD'];
+  const frontCost = front.reduce((s,d) => s + (getCostsForPeriod(period,d).actual||0), 0);
+  const backCost  = back.reduce((s,d)  => s + (getCostsForPeriod(period,d).actual||0), 0);
+
+  destroyChart('costStructurePie');
+  const ctx = document.getElementById('costStructurePie').getContext('2d');
+  charts['costStructurePie'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Front Office\n(Prod, Mark, IT)', 'Back Office\n(Ops, Fin, HR, BoD)'],
+      datasets: [{ data: [Math.round(frontCost/1000), Math.round(backCost/1000)],
+        backgroundColor: [C.costsCoem, C.costsCom], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#6b7280', font:{size:10}, padding:8 } },
+        datalabels: {
+          color: '#fff', font: { weight:'bold', size: 11 },
+          formatter: (v, ctx) => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+            return total > 0 ? ((v/total)*100).toFixed(0) + '%' : '';
+          }
+        }
+      }
+    }
+  });
 }
 
 // ── MAIN UPDATE ───────────────────────────────────────────────────────────
@@ -744,6 +907,7 @@ function updateAll() {
   const period = getPeriod();
   updateKPI(period);
   updateCash(period);
+  updateHRMetrics(period);
   updatePie(period);
   updateWaterfall(period);
   updateRevBar();
@@ -783,6 +947,7 @@ function handleSignOut() {
   document.getElementById('signInBtn').style.display = 'flex';
   document.getElementById('loadingOverlay').style.display = 'flex';
   document.getElementById('loadingMsg').textContent = 'Sign in to access the dashboard';
+  document.getElementById('overlaySignIn').style.display = 'block';
 }
 
 async function showUserInfo() {
@@ -811,27 +976,20 @@ function getCell(row, col) {
   if (!row || col >= row.length) return 0;
   const v = row[col];
   if (v === undefined || v === null || v === '') return 0;
-  // Strip currency formatting: "$1,155,393.41" → 1155393.41
   const cleaned = String(v).replace(/[$\s]/g, '').replace(/,(?=\d{3})/g, '');
   const n = parseFloat(cleaned);
   return isNaN(n) ? 0 : n;
 }
 
 const COST_COLS = [
-  ['Январь 2026',  2,  3],
-  ['Февраль 2026', 6,  7],
-  ['Март 2026',   10, 11],
-  ['Апрель 2026', 14, 15],
-  ['Май 2026',    18, 19],
-  ['Июнь 2026',   22, 23],
+  ['Январь 2026',  2,  3], ['Февраль 2026', 6,  7],
+  ['Март 2026',   10, 11], ['Апрель 2026', 14, 15],
+  ['Май 2026',    18, 19], ['Июнь 2026',   22, 23],
 ];
 const PROD_COLS = [
-  ['Январь 2026',  1,  2],
-  ['Февраль 2026', 5,  6],
-  ['Март 2026',    9, 10],
-  ['Апрель 2026', 13, 14],
-  ['Май 2026',    17, 18],
-  ['Июнь 2026',   21, 22],
+  ['Январь 2026',  1,  2], ['Февраль 2026', 5,  6],
+  ['Март 2026',    9, 10], ['Апрель 2026', 13, 14],
+  ['Май 2026',    17, 18], ['Июнь 2026',   21, 22],
 ];
 
 function parseCosts(rows) {
@@ -839,6 +997,20 @@ function parseCosts(rows) {
   if (!rows) return result;
   for (let i = 0; i < Math.min(rows.length, 67); i++) {
     if (rows[i][0] === 'ИТОГО ВСЕГО') {
+      COST_COLS.forEach(([p, bc, ac]) => {
+        result[p] = { budget: getCell(rows[i], bc), actual: getCell(rows[i], ac) };
+      });
+      break;
+    }
+  }
+  return result;
+}
+
+function parsePayroll(rows) {
+  const result = {};
+  if (!rows) return result;
+  for (let i = 0; i < Math.min(rows.length, 20); i++) {
+    if (rows[i] && rows[i][0] === 'ИТОГО: Payroll') {
       COST_COLS.forEach(([p, bc, ac]) => {
         result[p] = { budget: getCell(rows[i], bc), actual: getCell(rows[i], ac) };
       });
@@ -865,8 +1037,7 @@ function parseProductPivot(rows) {
 
 function parseRevenue(rows) {
   const result = [];
-  if (!rows) { console.warn('Revenue: no rows'); return result; }
-  console.log('Revenue rows:', rows.length, 'first data row:', rows[2]);
+  if (!rows) return result;
   for (let i = 2; i < rows.length; i++) {
     const row = rows[i];
     if (!row[0]) continue;
@@ -884,8 +1055,7 @@ function parseRevenue(rows) {
 
 function parseUA(rows) {
   const result = {};
-  if (!rows) { console.warn('UA: no rows'); return result; }
-  console.log('UA rows:', rows.length, 'row0:', rows[0], 'row1:', rows[1]);
+  if (!rows) return result;
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (!row[0]) continue;
@@ -902,55 +1072,43 @@ function parseCash(rows) {
     const row = rows[i];
     if (!row[0]) continue;
     const cy = getCell(row,1), rb = getCell(row,2);
-    if (cy || rb) result[row[0]] = { cyprus: Math.round(cy), rb: Math.round(rb) };
+    const hc = getCell(row,4); // Headcount from column E
+    if (cy || rb) result[row[0]] = { cyprus: Math.round(cy), rb: Math.round(rb), headcount: hc || null };
   }
   return result;
 }
 
 async function loadAllData() {
-  // Sheet names with spaces must be quoted in range notation
   const sheetRanges = [
-    'Revenue!A1:S45',
-    'UA!A1:L20',
-    'Cash!A1:D20',
-    'Total!A1:Z85',
-    'Production!A1:Z30',
-    "'Finance & Legal'!A1:Z30",
-    "'HR & Recruitment'!A1:Z30",
-    "'IT-Infrastructure'!A1:Z30",
-    'Marketing!A1:Z30',
-    'Operations!A1:Z30',
-    'BoD!A1:Z35',
+    'Revenue!A1:S45', 'UA!A1:L20', 'Cash!A1:F20',
+    'Total!A1:Z85', 'Production!A1:Z30',
+    "'Finance & Legal'!A1:Z30", "'HR & Recruitment'!A1:Z30",
+    "'IT-Infrastructure'!A1:Z30", 'Marketing!A1:Z30',
+    'Operations!A1:Z30', 'BoD!A1:Z35',
   ];
   const params = sheetRanges.map(r => 'ranges=' + encodeURIComponent(r)).join('&');
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?${params}`;
   const res  = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
   const data = await res.json();
-  if (data.error) { setLoading('Error: ' + data.error.message); console.error(data.error); return; }
-  console.log('Sheets loaded:', data.valueRanges.map((vr,i) => `${sheetRanges[i]}: ${(vr.values||[]).length} rows`));
+  if (data.error) { setLoading('Error: ' + data.error.message); return; }
 
   const vals = data.valueRanges.map(vr => vr.values || []);
   const [revRows, uaRows, cashRows, totalRows, ...deptRows] = vals;
-
-  // Debug: log raw data
-  console.log('=== RAW Revenue row[2]:', revRows[2]);
-  console.log('=== RAW Revenue row[3]:', revRows[3]);
-  console.log('=== RAW UA row[1]:', uaRows[1]);
-  console.log('=== RAW Cash row[1]:', cashRows[1]);
 
   RAW = {
     revenue: parseRevenue(revRows),
     ua:      parseUA(uaRows),
     cash:    parseCash(cashRows),
+    payroll: parsePayroll(totalRows),
     costs: {
-      Total:              parseCosts(totalRows),
-      Production:         parseCosts(deptRows[0]),
-      'Finance & Legal':  parseCosts(deptRows[1]),
-      'HR & Recruitment': parseCosts(deptRows[2]),
-      'IT-Infrastructure':parseCosts(deptRows[3]),
-      Marketing:          parseCosts(deptRows[4]),
-      Operations:         parseCosts(deptRows[5]),
-      BoD:                parseCosts(deptRows[6]),
+      Total:               parseCosts(totalRows),
+      Production:          parseCosts(deptRows[0]),
+      'Finance & Legal':   parseCosts(deptRows[1]),
+      'HR & Recruitment':  parseCosts(deptRows[2]),
+      'IT-Infrastructure': parseCosts(deptRows[3]),
+      Marketing:           parseCosts(deptRows[4]),
+      Operations:          parseCosts(deptRows[5]),
+      BoD:                 parseCosts(deptRows[6]),
     },
     product_pivot: parseProductPivot(totalRows),
     available_periods: [],
@@ -977,11 +1135,6 @@ function updatePeriodSelector() {
   ).join('');
   sel.value = RAW.available_periods.at(-1);
 }
-
-// Init — wait for GIS to load, then show overlay
-window.onload = () => {
-  // overlay already shown by default
-};
 </script>
 </body>
 </html>
