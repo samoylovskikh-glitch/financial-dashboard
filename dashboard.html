@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --bg: #f0f2f7;
+    --card: #ffffff;
+    --card2: #f5f7fb;
+    --border: #dde1ed;
+    --text: #1a1f36;
+    --muted: #6b7280;
+    --accent: #2563eb;
+    --green: #16a34a;
+    --red: #dc2626;
+    --orange: #ea7c0a;
+    --purple: #7c3aed;
+    --cyan: #0891b2;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Segoe UI', sans-serif; min-height: 100vh; }
+  
+  /* Header */
+  .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .header h1 span { color: var(--accent); }
+  .period-selector { display: flex; gap: 8px; align-items: center; }
+  .period-selector label { color: var(--muted); font-size: 13px; }
+  .period-selector select { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px; font-size: 14px; cursor: pointer; outline: none; }
+  .period-selector select:focus { border-color: var(--accent); }
+  
+  /* Layout */
+  .main { padding: 24px 32px; max-width: 1600px; margin: 0 auto; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .section { margin-bottom: 28px; }
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 14px; }
+
+  /* Cards */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px 26px; }
+  .card-title { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .card-sub { font-size: 11px; color: var(--muted); opacity: 0.7; margin-bottom: 16px; }
+
+  /* KPI row */
+  .kpi-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .kpi-card { flex: 1; min-width: 140px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px 20px; }
+  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 700; }
+  .kpi-delta { font-size: 12px; margin-top: 4px; }
+  .kpi-delta.pos { color: var(--green); }
+  .kpi-delta.neg { color: var(--red); }
+
+  /* Cash block */
+  .cash-row { display: grid; grid-template-columns: auto 1fr 1fr; gap: 20px; align-items: center; }
+  .cash-label { background: var(--accent); color: #fff; border-radius: 12px; padding: 16px 20px; font-size: 13px; font-weight: 700; line-height: 1.5; min-width: 120px; text-align: center; }
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .gauge-name { font-size: 13px; font-weight: 600; color: var(--text); }
+  .gauge-amount { font-size: 22px; font-weight: 700; color: var(--accent); }
+  canvas.gauge { max-width: 180px; max-height: 100px; }
+  .cash-summary { background: var(--card2); border-radius: 12px; padding: 14px 18px; font-size: 13px; line-height: 1.8; margin-top: 16px; }
+  .cash-summary .hi { color: var(--accent); font-weight: 700; }
+  .cash-summary .warn { color: var(--orange); font-weight: 700; }
+
+  /* Chart containers */
+  .chart-wrap { position: relative; }
+  canvas { max-height: 300px; }
+  canvas.tall { max-height: 360px; }
+
+  /* Waterfall */
+  .waterfall-labels { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 10px; }
+  .wf-tag { font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+
+  /* Filter buttons */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filter-btn { background: var(--card); border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 5px 14px; font-size: 12px; cursor: pointer; transition: all .15s; }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  /* Summary text */
+  .summary-box { background: var(--card2); border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: 13px; line-height: 1.8; margin-top: 14px; }
+  .summary-box .pos { color: var(--green); font-weight: 700; }
+  .summary-box .neg { color: var(--red); font-weight: 700; }
+  .summary-box .hi  { color: var(--accent); font-weight: 700; }
+  .summary-box .or  { color: var(--orange); font-weight: 700; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .cash-row { grid-template-columns: 1fr 1fr; }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Financial <span>Dashboard</span></h1>
+  <div class="period-selector">
+    <label>Period:</label>
+    <select id="periodSelect" onchange="updateAll()">
+      <option value="Январь 2026">January 2026</option>
+      <option value="Февраль 2026">February 2026</option>
+      <option value="Март 2026">March 2026</option>
+      <option value="Апрель 2026" selected>April 2026</option>
+    </select>
+  </div>
+  <div id="authSection">
+    <button id="signInBtn" onclick="handleSignIn()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="userInfo" style="display:none;align-items:center;gap:10px;">
+      <img id="userAvatar" style="width:30px;height:30px;border-radius:50%;" src="" alt="">
+      <span id="userName" style="font-size:13px;color:#1a1f36;font-weight:500;"></span>
+      <button onclick="handleSignOut()" style="background:none;border:1px solid #dde1ed;border-radius:6px;padding:5px 10px;font-size:12px;color:#6b7280;cursor:pointer;">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<div id="loadingOverlay" style="position:fixed;inset:0;background:#f0f2f7;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;">
+  <div style="font-size:32px;margin-bottom:16px;">📊</div>
+  <div id="loadingMsg" style="font-size:16px;font-weight:600;color:#1a1f36;">Sign in to access the dashboard</div>
+  <div style="margin-top:16px;" id="overlaySignIn">
+    <button onclick="handleSignIn()" style="background:#2563eb;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;box-shadow:0 4px 12px rgba(37,99,235,0.3);">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Sign in with Google
+    </button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── BLOCK 1: KPI GAUGES ── -->
+  <div class="section">
+    <div class="section-title">Key Metrics</div>
+    <div class="kpi-row" id="kpiRow"></div>
+  </div>
+
+  <!-- ── BLOCK 1b: CASH ── -->
+  <div class="section">
+    <div class="section-title">Cash Balances</div>
+    <div class="card">
+      <div class="cash-row">
+        <div class="cash-label">Account<br>Balances</div>
+        <div class="gauge-wrap">
+          <div class="gauge-name">🇨🇾 Cyprus</div>
+          <canvas class="gauge" id="gaugeCyprus"></canvas>
+          <div class="gauge-amount" id="cyprusAmt">—</div>
+        </div>
+        <div class="gauge-wrap">
+          <div class="gauge-name">🇧🇾 RB</div>
+          <canvas class="gauge" id="gaugeRb"></canvas>
+          <div class="gauge-amount" id="rbAmt">—</div>
+        </div>
+      </div>
+      <div class="cash-summary" id="cashSummary"></div>
+    </div>
+  </div>
+
+  <!-- ── BLOCK 2: REVENUE STRUCTURE PIE + WATERFALL ── -->
+  <div class="section">
+    <div class="section-title">Revenue, Expenses &amp; EBITDA</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Monthly Revenue Structure</div>
+        <div class="card-sub">Thousand USD</div>
+        <div class="chart-wrap"><canvas id="piePie"></canvas></div>
+        <div class="summary-box" id="pieSummary"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Waterfall: COEM → COM</div>
+        <div class="card-sub">Thousand USD</div>
+        <div class="chart-wrap"><canvas id="waterfallChart"></canvas></div>
+        <div class="summary-box" id="waterfallSummary"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BLOCK 3: TOTAL REVENUE ── -->
+  <div class="section">
+    <div class="section-title">Total Revenue</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Revenue Actual vs Previous Year (YoY) — Last 12 months</div>
+        <div class="card-sub">Thousand USD</div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="setRevFilter('total',this)">Total</button>
+          <button class="filter-btn" onclick="setRevFilter('coem',this)">COEM</button>
+          <button class="filter-btn" onclick="setRevFilter('com',this)">COM</button>
+        </div>
+        <div class="chart-wrap"><canvas class="tall" id="revBar"></canvas></div>
+        <div class="summary-box" id="revSummary"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Revenue Stacked — Last 12 months</div>
+        <div class="card-sub">Thousand USD</div>
+        <div class="filter-row">
+          <button class="filter-btn active" onclick="setStackFilter('total',this)">Total</button>
+          <button class="filter-btn" onclick="setStackFilter('coem',this)">COEM</button>
+          <button class="filter-btn" onclick="setStackFilter('com',this)">COM</button>
+        </div>
+        <div class="chart-wrap"><canvas class="tall" id="revStack"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BLOCK 4: GOALS / BUDGET EXECUTION ── -->
+  <div class="section">
+    <div class="section-title">Goals Accomplishment — Plan vs Actual</div>
+    <div class="card">
+      <div class="card-title">Budget Execution</div>
+      <div class="card-sub">Thousand USD · % execution (right axis)</div>
+      <div class="filter-row" id="deptFilters"></div>
+      <div class="chart-wrap"><canvas class="tall" id="goalsChart"></canvas></div>
+      <div class="summary-box" id="goalsSummary"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+Chart.register(ChartDataLabels);
+
+let RAW = null;
+
+// ── HELPERS ──────────────────────────────────────────────────────────────
+const fmt = (v, unit='k') => {
+  if (unit === 'M') return (v/1e6).toFixed(2) + 'M $';
+  if (unit === 'k') return Math.round(v/1000) + 'k';
+  return Math.round(v).toLocaleString();
+};
+const fmtM = v => (v/1e6).toFixed(2) + 'M $';
+const fmtK = v => Math.round(v/1000) + 'k USD';
+
+function getPeriod() { return document.getElementById('periodSelect').value; }
+
+function getRevForPeriod(period) {
+  return RAW.revenue.find(r => r.period === period) || null;
+}
+function getUAForPeriod(period) {
+  return RAW.ua[period] || {coem:0, com:0};
+}
+function getCashForPeriod(period) {
+  return RAW.cash[period] || {cyprus:0, rb:0};
+}
+function getCostsForPeriod(period, sheet='Total') {
+  return (RAW.costs[sheet] && RAW.costs[sheet][period]) || {budget:0, actual:0};
+}
+function getProductForPeriod(period) {
+  return RAW.product_pivot[period] || {};
+}
+
+// Get last 12 revenue entries with data
+function getLast12Rev() {
+  return RAW.revenue.slice(-12);
+}
+
+// ── GAUGE CHART ───────────────────────────────────────────────────────────
+const gaugeCharts = {};
+function drawGauge(id, value, max, color) {
+  const ctx = document.getElementById(id).getContext('2d');
+  if (gaugeCharts[id]) gaugeCharts[id].destroy();
+  const pct = Math.min(value / max, 1);
+  const startAngle = Math.PI;
+  const endAngle = startAngle + pct * Math.PI;
+  gaugeCharts[id] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [pct, 1 - pct],
+        backgroundColor: [color, '#e5e7ef'],
+        borderWidth: 0,
+        circumference: 180,
+        rotation: 270,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '72%',
+      plugins: { legend: {display:false}, tooltip: {enabled:false}, datalabels: {display:false} },
+    }
+  });
+}
+
+// ── CHART REGISTRY ────────────────────────────────────────────────────────
+const charts = {};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+// ── KPI ROW ───────────────────────────────────────────────────────────────
+function updateKPI(period) {
+  const rev = getRevForPeriod(period);
+  const ua  = getUAForPeriod(period);
+  const costs = getCostsForPeriod(period);
+  const prod = getProductForPeriod(period);
+
+  const totalRev = rev ? (rev.coem_inapp + rev.coem_ads + rev.com_inapp + rev.com_ads + rev.old_titles) : 0;
+  const totalUA  = ua.coem + ua.com;
+  const totalCosts = costs.actual;
+  const ebitda = totalRev - totalUA - totalCosts;
+
+  // Previous period for delta
+  const periods = RAW.available_periods;
+  const idx = periods.indexOf(period);
+  let deltaRev = null, deltaUA = null, deltaCosts = null, deltaEBITDA = null;
+  if (idx > 0) {
+    const prevP = periods[idx - 1];
+    const prevRev = getRevForPeriod(prevP);
+    const prevUA  = getUAForPeriod(prevP);
+    const prevCosts = getCostsForPeriod(prevP);
+    const prevTotalRev = prevRev ? (prevRev.coem_inapp + prevRev.coem_ads + prevRev.com_inapp + prevRev.com_ads + prevRev.old_titles) : 0;
+    const prevTotalUA  = prevUA.coem + prevUA.com;
+    const prevTotalCosts = prevCosts.actual;
+    const prevEBITDA = prevTotalRev - prevTotalUA - prevTotalCosts;
+    if (prevTotalRev) deltaRev = (totalRev - prevTotalRev) / prevTotalRev;
+    if (prevTotalUA) deltaUA = (totalUA - prevTotalUA) / prevTotalUA;
+    if (prevTotalCosts) deltaCosts = (totalCosts - prevTotalCosts) / prevTotalCosts;
+    if (prevEBITDA) deltaEBITDA = (ebitda - prevEBITDA) / Math.abs(prevEBITDA);
+  }
+
+  const kpis = [
+    { label:'Revenue', value: fmtM(totalRev), delta: deltaRev, positiveGood: true, color: '#4f8ef7' },
+    { label:'UA Spend', value: fmtM(totalUA), delta: deltaUA, positiveGood: false, color: '#f7a84f' },
+    { label:'Costs', value: fmtM(totalCosts), delta: deltaCosts, positiveGood: false, color: '#f45b69' },
+    { label:'EBITDA', value: fmtM(ebitda), delta: deltaEBITDA, positiveGood: true, color: ebitda >= 0 ? '#34c98e' : '#f45b69' },
+  ];
+
+  const row = document.getElementById('kpiRow');
+  row.innerHTML = kpis.map(k => {
+    let deltaHtml = '';
+    if (k.delta !== null) {
+      const sign = k.delta > 0 ? '+' : '';
+      const cls = (k.positiveGood ? k.delta > 0 : k.delta < 0) ? 'pos' : 'neg';
+      deltaHtml = `<div class="kpi-delta ${cls}">${sign}${(k.delta*100).toFixed(1)}% MoM</div>`;
+    }
+    return `<div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="color:${k.color}">${k.value}</div>
+      ${deltaHtml}
+    </div>`;
+  }).join('');
+}
+
+// ── CASH ──────────────────────────────────────────────────────────────────
+function updateCash(period) {
+  const c = getCashForPeriod(period);
+  const maxCyprus = 8e6, maxRB = 1e6;
+  drawGauge('gaugeCyprus', c.cyprus, maxCyprus, '#4f8ef7');
+  drawGauge('gaugeRb', c.rb, maxRB, '#9b72f5');
+  document.getElementById('cyprusAmt').textContent = fmtM(c.cyprus);
+  document.getElementById('rbAmt').textContent = fmtM(c.rb);
+  const total = c.cyprus + c.rb;
+  document.getElementById('cashSummary').innerHTML =
+    `Total account balance: <span class="hi">${fmtM(total)}</span>, of which <span class="warn">${fmtM(c.rb)}</span> in RB
+     (funds reserved as payment contingency buffer)`;
+}
+
+// ── PIE CHART ─────────────────────────────────────────────────────────────
+function updatePie(period) {
+  const rev = getRevForPeriod(period);
+  const ua  = getUAForPeriod(period);
+  const prod = getProductForPeriod(period);
+
+  const totalRev = rev ? (rev.coem_inapp + rev.coem_ads + rev.com_inapp + rev.com_ads + rev.old_titles) : 0;
+  const totalUA  = ua.coem + ua.com;
+  const costsCOEM = (prod.COEm ? prod.COEm.actual : 0) + (prod.Others ? prod.Others.actual : 0);
+  const costsCOM  = prod.COM ? prod.COM.actual : 0;
+  const ebitda = Math.max(0, totalRev - totalUA - costsCOEM - costsCOM);
+
+  const labels = ['UA COEM','UA COM','Costs COEM','Costs COM','EBITDA'];
+  const values = [ua.coem, ua.com, costsCOEM, costsCOM, ebitda].map(v => Math.round(v/1000));
+  const colors = ['#f7a84f','#fbbf24','#4fd1c5','#4f8ef7','#9b72f5'];
+
+  destroyChart('piePie');
+  const ctx = document.getElementById('piePie').getContext('2d');
+  charts['piePie'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#1a1d27' }] },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#6b7280', font: {size:12}, padding:16 } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}k (${((ctx.parsed/values.reduce((a,b)=>a+b,0))*100).toFixed(1)}%)` } },
+        datalabels: {
+          color: '#fff',
+          font: { weight: 'bold', size: 12 },
+          formatter: (v, ctx) => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+            const pct = ((v/total)*100).toFixed(1);
+            return v > 0 ? `${v}k\n(${pct}%)` : '';
+          }
+        }
+      }
+    }
+  });
+
+  const totK = values.reduce((a,b)=>a+b,0);
+  const ebitdaPct = totK ? ((values[3]/totK)*100).toFixed(1) : 0;
+  const uaCoemPct = totK ? ((values[0]/totK)*100).toFixed(1) : 0;
+  const uaComPct  = totK ? ((values[1]/totK)*100).toFixed(1) : 0;
+  const costPct   = totK ? (((values[2]+values[3])/totK)*100).toFixed(1) : 0;
+  document.getElementById('pieSummary').innerHTML =
+    `EBITDA share: <span class="pos">${ebitdaPct}%</span> · UA COEM: <span class="or">${uaCoemPct}%</span> · UA COM: <span class="or">${uaComPct}%</span><br>
+     Total cost-to-revenue: <span class="neg">${costPct}%</span>, of which Costs COEM <span class="neg">${totK ? ((values[2]/totK)*100).toFixed(1) : 0}%</span> and Costs COM <span class="neg">${totK ? ((values[3]/totK)*100).toFixed(1) : 0}%</span>`;
+}
+
+// ── WATERFALL ─────────────────────────────────────────────────────────────
+function updateWaterfall(period) {
+  const rev = getRevForPeriod(period);
+  const ua  = getUAForPeriod(period);
+  const prod = getProductForPeriod(period);
+
+  const revCOEM = rev ? Math.round((rev.coem_inapp + rev.coem_ads)/1000) : 0;
+  const revCOM  = rev ? Math.round((rev.com_inapp + rev.com_ads)/1000) : 0;
+  const uaCOEM  = Math.round(ua.coem / 1000);
+  const uaCOM   = Math.round(ua.com / 1000);
+  const costsCOEM = Math.round(((prod.COEm ? prod.COEm.actual : 0) + (prod.Others ? prod.Others.actual : 0)) / 1000);
+  const costsCOM  = Math.round((prod.COM ? prod.COM.actual : 0) / 1000);
+  const ebitda1   = revCOEM - uaCOEM - costsCOEM;
+  const oldTitles = rev ? Math.round(rev.old_titles / 1000) : 0;
+  const ebitdaFin = ebitda1 + revCOM - uaCOM - costsCOM + oldTitles;
+
+  // Waterfall: floating bars [base, top]
+  // Steps: Revenue COEM | -UA COEM | -Costs COEM | EBITDA1 | +Rev COM | -UA COM | -Costs COM | EBITDA
+  let running = 0;
+  const steps = [
+    { label: 'Rev COEM', val: revCOEM,    color: '#4f8ef7' },
+    { label: '-UA COEM', val: -uaCOEM,   color: '#f7a84f' },
+    { label: '-Costs COEM', val: -costsCOEM, color: '#4fd1c5' },
+    { label: 'EBITDA 1', val: null,      color: '#34c98e', isTotal: true, total: ebitda1 },
+    { label: '+Rev COM', val: revCOM,    color: '#4f8ef7' },
+    { label: '-UA COM',  val: -uaCOM,    color: '#f7a84f' },
+    { label: '-Costs COM', val: -costsCOM, color: '#9b72f5' },
+    { label: 'EBITDA',   val: null,      color: '#34c98e', isTotal: true, total: ebitdaFin },
+  ];
+
+  const floatData = [];
+  const bgColors = [];
+  steps.forEach(s => {
+    if (s.isTotal) {
+      floatData.push([0, s.total]);
+      bgColors.push(s.total >= 0 ? '#34c98e' : '#f45b69');
+      running = s.total;
+    } else {
+      const base = running;
+      const top  = running + s.val;
+      floatData.push(s.val >= 0 ? [base, top] : [top, base]);
+      bgColors.push(s.color);
+      running += s.val;
+    }
+  });
+
+  destroyChart('waterfallChart');
+  const ctx = document.getElementById('waterfallChart').getContext('2d');
+  charts['waterfallChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: steps.map(s => s.label),
+      datasets: [{
+        data: floatData,
+        backgroundColor: bgColors,
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const d = ctx.raw;
+              return ` ${Array.isArray(d) ? Math.abs(d[1]-d[0]) : d}k USD`;
+            }
+          }
+        },
+        datalabels: {
+          color: '#1a1f36',
+          font: { weight: 'bold', size: 11 },
+          anchor: 'end',
+          align: 'top',
+          formatter: (v) => {
+            if (!Array.isArray(v)) return v;
+            const val = v[1] - v[0];
+            return (val >= 0 ? '' : '') + Math.round(val) + 'k';
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#6b7280', font:{size:11} }, grid: { color: '#e5e7ef' } },
+        y: { ticks: { color: '#6b7280' }, grid: { color: '#e5e7ef' } }
+      }
+    }
+  });
+
+  document.getElementById('waterfallSummary').innerHTML =
+    `COEM: Revenue <span class="pos">${revCOEM}k</span> · UA <span class="neg">-${uaCOEM}k</span> · Costs <span class="neg">-${costsCOEM}k</span> → EBITDA 1 <span class="${ebitda1>=0?'pos':'neg'}">${ebitda1}k</span><br>
+     COM: Revenue <span class="pos">+${revCOM}k</span> · UA <span class="neg">-${uaCOM}k</span> · Costs <span class="neg">-${costsCOM}k</span> · Old Titles <span class="pos">+${oldTitles}k</span> → <b>Total EBITDA <span class="${ebitdaFin>=0?'pos':'neg'}">${ebitdaFin}k</span></b>`;
+}
+
+// ── REVENUE BAR (YoY) ─────────────────────────────────────────────────────
+let revFilter = 'total';
+function setRevFilter(f, btn) {
+  revFilter = f;
+  document.querySelectorAll('#revBar').forEach(() => {});
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (b.parentElement.id !== 'deptFilters') {
+      // reset only revenue section buttons
+    }
+  });
+  // toggle active on buttons in same row
+  btn.closest('.filter-row').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateRevBar();
+}
+
+function getRevTotal(r) {
+  if (!r) return 0;
+  return r.coem_inapp + r.coem_ads + r.com_inapp + r.com_ads + r.old_titles;
+}
+function getRevCOEM(r) { return r ? r.coem_inapp + r.coem_ads : 0; }
+function getRevCOM(r)  { return r ? r.com_inapp  + r.com_ads  : 0; }
+
+function updateRevBar() {
+  const last12 = RAW.revenue.slice(-12);
+  const getVal = revFilter === 'coem' ? getRevCOEM : revFilter === 'com' ? getRevCOM : getRevTotal;
+
+  // Match previous year: offset by 12
+  const all = RAW.revenue;
+  const pairs = last12.map((r, i) => {
+    const prevIdx = all.indexOf(r) - 12;
+    const prev = prevIdx >= 0 ? all[prevIdx] : null;
+    return {
+      label: r.period.replace(' 2026','').replace(' 2025','').substring(0,3) + ' ' + r.period.split(' ')[1],
+      current: Math.round(getVal(r)/1000),
+      prev: prev ? Math.round(getVal(prev)/1000) : null,
+    };
+  });
+
+  destroyChart('revBar');
+  const ctx = document.getElementById('revBar').getContext('2d');
+  charts['revBar'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: pairs.map(p => p.label),
+      datasets: [
+        { label: 'Previous Year', data: pairs.map(p => p.prev), backgroundColor: '#c7d2e8', borderRadius: 3 },
+        { label: 'Current Year', data: pairs.map(p => p.current), backgroundColor: '#4f8ef7', borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#6b7280', font:{size:12} } },
+        datalabels: {
+          color: '#1a1f36',
+          font: { size: 10 },
+          anchor: 'end', align: 'top',
+          formatter: v => v ? v + 'k' : ''
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#6b7280', font:{size:11} }, grid: { color: '#e5e7ef' } },
+        y: { ticks: { color: '#6b7280' }, grid: { color: '#e5e7ef' } }
+      }
+    }
+  });
+
+  // Summary for selected period
+  const selPeriod = getPeriod();
+  const curR = getRevForPeriod(selPeriod);
+  const curIdx = all.findIndex(r => r.period === selPeriod);
+  const prevYearR = curIdx >= 12 ? all[curIdx - 12] : null;
+  const prevMonthR = curIdx >= 1 ? all[curIdx - 1] : null;
+  const cur = Math.round(getVal(curR) / 1000);
+  const pyv = prevYearR ? Math.round(getVal(prevYearR)/1000) : null;
+  const pmv = prevMonthR ? Math.round(getVal(prevMonthR)/1000) : null;
+  let txt = `Selected month revenue: <span class="hi">${cur}k USD</span>`;
+  if (pyv) {
+    const diff = cur - pyv; const pct = ((diff/pyv)*100).toFixed(1);
+    txt += `<br>vs same month last year: <span class="${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${diff}k (${pct}%)</span>`;
+  }
+  if (pmv) {
+    const diff = cur - pmv; const pct = ((diff/pmv)*100).toFixed(1);
+    txt += `<br>vs previous month: <span class="${diff>=0?'pos':'neg'}">${diff>=0?'+':''}${diff}k (${pct}%)</span>`;
+  }
+  document.getElementById('revSummary').innerHTML = txt;
+}
+
+// ── REVENUE STACKED ───────────────────────────────────────────────────────
+let stackFilter = 'total';
+function setStackFilter(f, btn) {
+  stackFilter = f;
+  btn.closest('.filter-row').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateRevStack();
+}
+
+function updateRevStack() {
+  const last12 = RAW.revenue.slice(-12);
+  const labels = last12.map(r => {
+    const parts = r.period.split(' ');
+    return parts[0].substring(0,3) + ' ' + parts[1];
+  });
+
+  let datasets;
+  if (stackFilter === 'coem') {
+    datasets = [
+      { label: 'COEM In-App', data: last12.map(r => Math.round(r.coem_inapp/1000)), backgroundColor: '#4f8ef7', stack: 's' },
+      { label: 'COEM Ads',    data: last12.map(r => Math.round(r.coem_ads/1000)),   backgroundColor: '#2a5db0', stack: 's' },
+    ];
+  } else if (stackFilter === 'com') {
+    datasets = [
+      { label: 'COM In-App', data: last12.map(r => Math.round(r.com_inapp/1000)), backgroundColor: '#34c98e', stack: 's' },
+      { label: 'COM Ads',    data: last12.map(r => Math.round(r.com_ads/1000)),   backgroundColor: '#1a8f60', stack: 's' },
+    ];
+  } else {
+    datasets = [
+      { label: 'COEM In-App', data: last12.map(r => Math.round(r.coem_inapp/1000)), backgroundColor: '#4f8ef7', stack: 's' },
+      { label: 'COEM Ads',    data: last12.map(r => Math.round(r.coem_ads/1000)),   backgroundColor: '#2a5db0', stack: 's' },
+      { label: 'COM In-App',  data: last12.map(r => Math.round(r.com_inapp/1000)),  backgroundColor: '#34c98e', stack: 's' },
+      { label: 'COM Ads',     data: last12.map(r => Math.round(r.com_ads/1000)),    backgroundColor: '#1a8f60', stack: 's' },
+      { label: 'Old Titles',  data: last12.map(r => Math.round(r.old_titles/1000)), backgroundColor: '#f7a84f', stack: 's' },
+    ];
+  }
+
+  destroyChart('revStack');
+  const ctx = document.getElementById('revStack').getContext('2d');
+  charts['revStack'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#6b7280', font:{size:11} } },
+        datalabels: {
+          color: '#fff',
+          font: { size: 10, weight: 'bold' },
+          formatter: v => v > 20 ? v + 'k' : '',
+          anchor: 'center', align: 'center'
+        }
+      },
+      scales: {
+        x: { stacked: true, ticks: { color: '#6b7280', font:{size:11} }, grid: { color: '#e5e7ef' } },
+        y: { stacked: true, ticks: { color: '#6b7280' }, grid: { color: '#e5e7ef' } }
+      }
+    }
+  });
+}
+
+// ── GOALS / BUDGET EXECUTION ──────────────────────────────────────────────
+const DEPT_LABELS = {
+  'Total': 'Total', 'Production': 'Production', 'Finance & Legal': 'Finance',
+  'HR & Recruitment': 'HR', 'IT-Infrastructure': 'IT', 'Marketing': 'Marketing',
+  'Operations': 'Operations', 'BoD': 'BoD'
+};
+let deptFilter = 'Total';
+
+function buildDeptFilters() {
+  const row = document.getElementById('deptFilters');
+  row.innerHTML = Object.entries(DEPT_LABELS).map(([k,v]) =>
+    `<button class="filter-btn ${k===deptFilter?'active':''}" onclick="setDeptFilter('${k}',this)">${v}</button>`
+  ).join('');
+}
+
+function setDeptFilter(d, btn) {
+  deptFilter = d;
+  btn.closest('.filter-row').querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateGoals();
+}
+
+function updateGoals() {
+  const periods = RAW.available_periods;
+  const labels = periods.map(p => p.replace(' 2026','').substring(0,3) + ' 2026');
+  const budgets = periods.map(p => {
+    const c = getCostsForPeriod(p, deptFilter);
+    return Math.round(c.budget / 1000);
+  });
+  const actuals = periods.map(p => {
+    const c = getCostsForPeriod(p, deptFilter);
+    return Math.round(c.actual / 1000);
+  });
+  const pcts = budgets.map((b, i) => b > 0 ? Math.round((actuals[i]/b)*100) : 0);
+
+  destroyChart('goalsChart');
+  const ctx = document.getElementById('goalsChart').getContext('2d');
+  charts['goalsChart'] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Plan',   data: budgets, backgroundColor: '#c7d2e8', borderRadius: 4, order: 2 },
+        { label: 'Actual', data: actuals, backgroundColor: '#4f8ef7', borderRadius: 4, order: 2 },
+        { label: '% Execution', data: pcts, type: 'line', yAxisID: 'y2',
+          borderColor: '#f7a84f', backgroundColor: 'transparent',
+          pointBackgroundColor: '#f7a84f', borderWidth: 2, pointRadius: 5,
+          tension: 0.3, order: 1 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#6b7280', font:{size:12} } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.datasetIndex === 2 ? ` ${ctx.parsed.y}%` : ` ${ctx.parsed.y}k USD`
+          }
+        },
+        datalabels: {
+          color: ctx => ctx.datasetIndex === 2 ? '#ea7c0a' : '#1a1f36',
+          font: { size: 10, weight: 'bold' },
+          anchor: ctx => ctx.datasetIndex === 2 ? 'center' : 'end',
+          align: ctx => ctx.datasetIndex === 2 ? 'top' : 'top',
+          formatter: (v, ctx) => {
+            if (ctx.datasetIndex === 2) return v + '%';
+            return v > 0 ? v + 'k' : '';
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#6b7280' }, grid: { color: '#e5e7ef' } },
+        y: { ticks: { color: '#6b7280', callback: v => v + 'k' }, grid: { color: '#e5e7ef' }, position: 'left' },
+        y2: { ticks: { color: '#f7a84f', callback: v => v + '%' }, grid: { display: false }, position: 'right' }
+      }
+    }
+  });
+
+  // Summary
+  const selPeriod = getPeriod();
+  const c = getCostsForPeriod(selPeriod, deptFilter);
+  const pct = c.budget > 0 ? ((c.actual/c.budget)*100).toFixed(1) : '—';
+  const diff = Math.round((c.actual - c.budget)/1000);
+  document.getElementById('goalsSummary').innerHTML =
+    `<b>${DEPT_LABELS[deptFilter]}</b> · ${selPeriod}: Plan <span class="hi">${Math.round(c.budget/1000)}k</span> · Actual <span class="${c.actual<=c.budget?'pos':'neg'}">${Math.round(c.actual/1000)}k</span> · Execution <span class="${parseFloat(pct)<=100?'pos':'neg'}">${pct}%</span> · Variance <span class="${diff<=0?'pos':'neg'}">${diff>=0?'+':''}${diff}k</span>`;
+}
+
+// ── MAIN UPDATE ───────────────────────────────────────────────────────────
+function updateAll() {
+  const period = getPeriod();
+  updateKPI(period);
+  updateCash(period);
+  updatePie(period);
+  updateWaterfall(period);
+  updateRevBar();
+  updateRevStack();
+  updateGoals();
+}
+
+// ── GOOGLE AUTH & DATA LOADING ───────────────────────────────────────────
+const CLIENT_ID = '704515119316-o55llqf6qv0c6mjk9srhuu4jvjkioda7.apps.googleusercontent.com';
+const SHEET_ID  = '1dy1hQsGMOLtMXAOyioOX0UkHmVFkzCI04QYES0HO7R0';
+const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+
+let tokenClient, accessToken = null;
+
+function handleSignIn() {
+  if (!tokenClient) {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES + ' https://www.googleapis.com/auth/userinfo.profile',
+      callback: async (resp) => {
+        if (resp.error) { console.error(resp); return; }
+        accessToken = resp.access_token;
+        showUserInfo();
+        setLoading('Loading data from Google Sheets…');
+        await loadAllData();
+        hideOverlay();
+      }
+    });
+  }
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+function handleSignOut() {
+  google.accounts.oauth2.revoke(accessToken, () => {});
+  accessToken = null;
+  document.getElementById('userInfo').style.display = 'none';
+  document.getElementById('signInBtn').style.display = 'flex';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  document.getElementById('loadingMsg').textContent = 'Sign in to access the dashboard';
+}
+
+async function showUserInfo() {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    const u = await res.json();
+    document.getElementById('userAvatar').src = u.picture;
+    document.getElementById('userName').textContent = u.name;
+    document.getElementById('userInfo').style.display = 'flex';
+    document.getElementById('signInBtn').style.display = 'none';
+  } catch(e) {}
+}
+
+function setLoading(msg) {
+  document.getElementById('loadingMsg').textContent = msg;
+  document.getElementById('overlaySignIn').style.display = 'none';
+}
+
+function hideOverlay() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function getCell(row, col) {
+  if (!row || col >= row.length) return 0;
+  const v = row[col];
+  if (v === undefined || v === null || v === '') return 0;
+  // Strip currency formatting: "$1,155,393.41" → 1155393.41
+  const cleaned = String(v).replace(/[$\s]/g, '').replace(/,(?=\d{3})/g, '');
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+const COST_COLS = [
+  ['Январь 2026',  2,  3],
+  ['Февраль 2026', 6,  7],
+  ['Март 2026',   10, 11],
+  ['Апрель 2026', 14, 15],
+  ['Май 2026',    18, 19],
+  ['Июнь 2026',   22, 23],
+];
+const PROD_COLS = [
+  ['Январь 2026',  1,  2],
+  ['Февраль 2026', 5,  6],
+  ['Март 2026',    9, 10],
+  ['Апрель 2026', 13, 14],
+  ['Май 2026',    17, 18],
+  ['Июнь 2026',   21, 22],
+];
+
+function parseCosts(rows) {
+  const result = {};
+  if (!rows) return result;
+  for (let i = 0; i < Math.min(rows.length, 67); i++) {
+    if (rows[i][0] === 'ИТОГО ВСЕГО') {
+      COST_COLS.forEach(([p, bc, ac]) => {
+        result[p] = { budget: getCell(rows[i], bc), actual: getCell(rows[i], ac) };
+      });
+      break;
+    }
+  }
+  return result;
+}
+
+function parseProductPivot(rows) {
+  const result = {};
+  if (!rows) return result;
+  PROD_COLS.forEach(([p]) => result[p] = {});
+  for (let i = 60; i < rows.length; i++) {
+    const label = rows[i][0];
+    if (['COEm', 'COM', 'Others'].includes(label)) {
+      PROD_COLS.forEach(([p, bc, ac]) => {
+        result[p][label] = { budget: getCell(rows[i], bc), actual: getCell(rows[i], ac) };
+      });
+    }
+  }
+  return result;
+}
+
+function parseRevenue(rows) {
+  const result = [];
+  if (!rows) { console.warn('Revenue: no rows'); return result; }
+  console.log('Revenue rows:', rows.length, 'first data row:', rows[2]);
+  for (let i = 2; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row[0]) continue;
+    const ci = getCell(row,1), ca = getCell(row,17);
+    const oi = getCell(row,7), oa = getCell(row,18);
+    const ot = getCell(row,12);
+    if (ci+ca+oi+oa+ot === 0) continue;
+    result.push({ period: row[0],
+      coem_inapp: Math.round(ci), coem_ads: Math.round(ca),
+      com_inapp:  Math.round(oi), com_ads:  Math.round(oa),
+      old_titles: Math.round(ot) });
+  }
+  return result;
+}
+
+function parseUA(rows) {
+  const result = {};
+  if (!rows) { console.warn('UA: no rows'); return result; }
+  console.log('UA rows:', rows.length, 'row0:', rows[0], 'row1:', rows[1]);
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row[0]) continue;
+    const c = getCell(row,1), o = getCell(row,2);
+    if (c > 0 || o > 0) result[row[0]] = { coem: Math.round(c), com: Math.round(o) };
+  }
+  return result;
+}
+
+function parseCash(rows) {
+  const result = {};
+  if (!rows) return result;
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row[0]) continue;
+    const cy = getCell(row,1), rb = getCell(row,2);
+    if (cy || rb) result[row[0]] = { cyprus: Math.round(cy), rb: Math.round(rb) };
+  }
+  return result;
+}
+
+async function loadAllData() {
+  // Sheet names with spaces must be quoted in range notation
+  const sheetRanges = [
+    'Revenue!A1:S45',
+    'UA!A1:L20',
+    'Cash!A1:D20',
+    'Total!A1:Z85',
+    'Production!A1:Z30',
+    "'Finance & Legal'!A1:Z30",
+    "'HR & Recruitment'!A1:Z30",
+    "'IT-Infrastructure'!A1:Z30",
+    'Marketing!A1:Z30',
+    'Operations!A1:Z30',
+    'BoD!A1:Z35',
+  ];
+  const params = sheetRanges.map(r => 'ranges=' + encodeURIComponent(r)).join('&');
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?${params}`;
+  const res  = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+  const data = await res.json();
+  if (data.error) { setLoading('Error: ' + data.error.message); console.error(data.error); return; }
+  console.log('Sheets loaded:', data.valueRanges.map((vr,i) => `${sheetRanges[i]}: ${(vr.values||[]).length} rows`));
+
+  const vals = data.valueRanges.map(vr => vr.values || []);
+  const [revRows, uaRows, cashRows, totalRows, ...deptRows] = vals;
+
+  // Debug: log raw data
+  console.log('=== RAW Revenue row[2]:', revRows[2]);
+  console.log('=== RAW Revenue row[3]:', revRows[3]);
+  console.log('=== RAW UA row[1]:', uaRows[1]);
+  console.log('=== RAW Cash row[1]:', cashRows[1]);
+
+  RAW = {
+    revenue: parseRevenue(revRows),
+    ua:      parseUA(uaRows),
+    cash:    parseCash(cashRows),
+    costs: {
+      Total:              parseCosts(totalRows),
+      Production:         parseCosts(deptRows[0]),
+      'Finance & Legal':  parseCosts(deptRows[1]),
+      'HR & Recruitment': parseCosts(deptRows[2]),
+      'IT-Infrastructure':parseCosts(deptRows[3]),
+      Marketing:          parseCosts(deptRows[4]),
+      Operations:         parseCosts(deptRows[5]),
+      BoD:                parseCosts(deptRows[6]),
+    },
+    product_pivot: parseProductPivot(totalRows),
+    available_periods: [],
+  };
+
+  RAW.available_periods = COST_COLS
+    .map(([p]) => p)
+    .filter(p => RAW.costs.Total[p] && RAW.costs.Total[p].actual > 0);
+
+  updatePeriodSelector();
+  buildDeptFilters();
+  updateAll();
+}
+
+function updatePeriodSelector() {
+  const sel = document.getElementById('periodSelect');
+  const LABELS = {
+    'Январь 2026':'January 2026','Февраль 2026':'February 2026',
+    'Март 2026':'March 2026','Апрель 2026':'April 2026',
+    'Май 2026':'May 2026','Июнь 2026':'June 2026'
+  };
+  sel.innerHTML = RAW.available_periods.map(p =>
+    `<option value="${p}">${LABELS[p]||p}</option>`
+  ).join('');
+  sel.value = RAW.available_periods.at(-1);
+}
+
+// Init — wait for GIS to load, then show overlay
+window.onload = () => {
+  // overlay already shown by default
+};
+</script>
+</body>
+</html>
