@@ -867,31 +867,34 @@ function updateGoals() {
 }
 
 // ── HR & COST METRICS ─────────────────────────────────────────────────────
-// Payroll actuals per period (from Total sheet, ИТОГО: Payroll row)
-const PAYROLL = {
-  'Январь 2026': 318247, 'Февраль 2026': 309483,
-  'Март 2026': 305149,   'Апрель 2026': 304413,
-};
-const HEADCOUNT = 105; // TODO: load from Cash!E column
-
 function updateHRMetrics(period) {
-  const rev    = getRevForPeriod(period);
+  const rev      = getRevForPeriod(period);
   const totalRev = rev ? (rev.coem_inapp + rev.coem_ads + rev.com_inapp + rev.com_ads + rev.old_titles) : 0;
-  const payroll  = PAYROLL[period] || 0;
+  const cashNow  = getCashForPeriod(period);
+  const payroll  = (RAW.payroll && RAW.payroll[period]) ? RAW.payroll[period].actual : 0;
+  const HEADCOUNT = cashNow.headcount || 105;
   const revPerEmp = HEADCOUNT > 0 ? Math.round(totalRev / HEADCOUNT) : 0;
 
   // Previous period for deltas
   const periods = RAW.available_periods;
   const idx = periods.indexOf(period);
   const prevP = idx > 0 ? periods[idx - 1] : null;
-  const prevPayroll = prevP ? (PAYROLL[prevP] || 0) : null;
+  const prevPayroll = prevP && RAW.payroll && RAW.payroll[prevP] ? RAW.payroll[prevP].actual : null;
+  const prevCash = prevP ? getCashForPeriod(prevP) : null;
+  const prevHC = prevCash ? (prevCash.headcount || HEADCOUNT) : HEADCOUNT;
   const prevRev = prevP ? getRevForPeriod(prevP) : null;
   const prevTotalRev = prevRev ? (prevRev.coem_inapp + prevRev.coem_ads + prevRev.com_inapp + prevRev.com_ads + prevRev.old_titles) : 0;
-  const prevRevPerEmp = prevTotalRev > 0 ? Math.round(prevTotalRev / HEADCOUNT) : null;
+  const prevRevPerEmp = prevTotalRev > 0 ? Math.round(prevTotalRev / prevHC) : null;
 
   // Headcount
   document.getElementById('headcountVal').textContent = HEADCOUNT;
-  document.getElementById('headcountDelta').textContent = '— MoM';
+  if (prevCash && prevCash.headcount && prevCash.headcount !== HEADCOUNT) {
+    const d = HEADCOUNT - prevCash.headcount;
+    document.getElementById('headcountDelta').innerHTML =
+      `<span style="color:${d>=0?C.revenue:C.uaCoem};font-weight:600">${d>=0?'+':''}${d} MoM</span>`;
+  } else {
+    document.getElementById('headcountDelta').textContent = '— MoM';
+  }
 
   // Payroll
   document.getElementById('payrollVal').textContent = '$' + Math.round(payroll).toLocaleString();
