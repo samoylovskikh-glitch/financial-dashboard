@@ -374,10 +374,10 @@ function updateKPI(period) {
   }
 
   const kpis = [
-    { label:'Revenue', value: fmtM(totalRev), delta: deltaRev, positiveGood: true, color: C.revenue },
-    { label:'UA Spend', value: fmtM(totalUA), delta: deltaUA, positiveGood: false, color: C.uaCoem },
-    { label:'Costs', value: fmtM(totalCosts), delta: deltaCosts, positiveGood: false, color: C.costsCoem },
-    { label:'EBITDA', value: fmtM(ebitda), delta: deltaEBITDA, positiveGood: true, color: ebitda >= 0 ? C.ebitda : '#f45b69' },
+    { label:'Revenue',  value: fmtM(totalRev),  delta: deltaRev,      positiveGood: true,  color: C.revenue },
+    { label:'UA Spend', value: fmtM(totalUA),   delta: deltaUA,       positiveGood: false, color: C.uaCoem },
+    { label:'Costs',    value: fmtM(totalCosts), delta: deltaCosts,   positiveGood: false, color: C.costsCoem },
+    { label:'EBITDA',   value: fmtM(ebitda),    delta: deltaEBITDA,   positiveGood: true,  color: ebitda >= 0 ? C.ebitda : '#f45b69' },
   ];
 
   const row = document.getElementById('kpiRow');
@@ -593,6 +593,38 @@ function updateRevBar() {
     };
   });
 
+  // ROAS360 line — loaded from UA!O/P
+  const roasDatasets = [];
+  if (revFilter !== 'total') {
+    const roasColor = revFilter === 'coem' ? C.uaCoem : C.uaCom;
+    const roasValues = last12.map(r => {
+      const ua = RAW.ua[r.period];
+      if (!ua) return null;
+      const val = revFilter === 'coem' ? ua.roas_coem : ua.roas_com;
+      return val || null;
+    });
+    roasDatasets.push({
+      label: `ROAS360 ${revFilter.toUpperCase()}`,
+      data: roasValues,
+      type: 'line',
+      yAxisID: 'y2',
+      borderColor: '#1a1f36',
+      backgroundColor: 'transparent',
+      pointBackgroundColor: '#1a1f36',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      borderWidth: 2,
+      borderDash: [6, 4],
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      tension: 0,
+      spanGaps: false,
+      clip: false,
+      order: 1,
+      datalabels: { display: false },
+    });
+  }
+
   destroyChart('revBar');
   const ctx = document.getElementById('revBar').getContext('2d');
   charts['revBar'] = new Chart(ctx, {
@@ -600,8 +632,9 @@ function updateRevBar() {
     data: {
       labels: pairs.map(p => p.label),
       datasets: [
-        { label: 'Previous Year', data: pairs.map(p => p.prev), backgroundColor: '#c7d2e8', borderRadius: 3 },
-        { label: 'Current Year', data: pairs.map(p => p.current), backgroundColor: '#4f8ef7', borderRadius: 3 },
+        { label: 'Previous Year', data: pairs.map(p => p.prev), backgroundColor: '#c7d2e8', borderRadius: 3, order: 3 },
+        { label: 'Current Year',  data: pairs.map(p => p.current), backgroundColor: '#4f8ef7', borderRadius: 3, order: 2 },
+        ...roasDatasets,
       ]
     },
     options: {
@@ -612,12 +645,21 @@ function updateRevBar() {
           color: '#1a1f36',
           font: { size: 10 },
           anchor: 'end', align: 'top',
-          formatter: v => v ? v + 'k' : ''
+          formatter: (v, ctx) => {
+            if (ctx.dataset.type === 'line') return ''; // no label on line
+            return v ? v + 'k' : '';
+          }
         }
       },
       scales: {
         x: { ticks: { color: '#6b7280', font:{size:11} }, grid: { color: '#e5e7ef' } },
-        y: { ticks: { color: '#6b7280' }, grid: { color: '#e5e7ef' } }
+        y: { ticks: { color: '#6b7280' }, grid: { color: '#e5e7ef' }, position: 'left' },
+        y2: revFilter !== 'total' ? {
+          min: 0, max: 150,
+          ticks: { color: revFilter === 'coem' ? C.uaCoem : C.uaCom, callback: v => v + '%', stepSize: 50 },
+          grid: { display: false },
+          position: 'right',
+        } : undefined,
       }
     }
   });
@@ -760,7 +802,7 @@ function setDeptFilter(d, btn) {
 }
 
 function updateGoals() {
-  const periods = RAW.available_periods;
+  const periods = RAW.all_periods || RAW.available_periods;
   const labels = periods.map(p => p.replace(' 2026','').substring(0,3) + ' 2026');
   const budgets = periods.map(p => {
     const c = getCostsForPeriod(p, deptFilter);
@@ -825,31 +867,31 @@ function updateGoals() {
 }
 
 // ── HR & COST METRICS ─────────────────────────────────────────────────────
-// PAYROLL and HEADCOUNT loaded dynamically from Google Sheets
+// Payroll actuals per period (from Total sheet, ИТОГО: Payroll row)
+const PAYROLL = {
+  'Январь 2026': 318247, 'Февраль 2026': 309483,
+  'Март 2026': 305149,   'Апрель 2026': 304413,
+};
+const HEADCOUNT = 105; // TODO: load from Cash!E column
 
 function updateHRMetrics(period) {
   const rev    = getRevForPeriod(period);
   const totalRev = rev ? (rev.coem_inapp + rev.coem_ads + rev.com_inapp + rev.com_ads + rev.old_titles) : 0;
-  const payroll  = (RAW.payroll && RAW.payroll[period]) ? RAW.payroll[period].actual : 0;
-  const cashNow = getCashForPeriod(period);
-  const HEADCOUNT = cashNow.headcount || 105;
+  const payroll  = PAYROLL[period] || 0;
   const revPerEmp = HEADCOUNT > 0 ? Math.round(totalRev / HEADCOUNT) : 0;
 
   // Previous period for deltas
   const periods = RAW.available_periods;
   const idx = periods.indexOf(period);
   const prevP = idx > 0 ? periods[idx - 1] : null;
-  const prevPayroll = prevP && RAW.payroll && RAW.payroll[prevP] ? RAW.payroll[prevP].actual : null;
+  const prevPayroll = prevP ? (PAYROLL[prevP] || 0) : null;
   const prevRev = prevP ? getRevForPeriod(prevP) : null;
   const prevTotalRev = prevRev ? (prevRev.coem_inapp + prevRev.coem_ads + prevRev.com_inapp + prevRev.com_ads + prevRev.old_titles) : 0;
-  const prevCash = prevP ? getCashForPeriod(prevP) : null;
-  const prevHC = prevCash ? (prevCash.headcount || HEADCOUNT) : HEADCOUNT;
-  const prevRevPerEmp = prevTotalRev > 0 ? Math.round(prevTotalRev / prevHC) : null;
+  const prevRevPerEmp = prevTotalRev > 0 ? Math.round(prevTotalRev / HEADCOUNT) : null;
 
   // Headcount
   document.getElementById('headcountVal').textContent = HEADCOUNT;
-
-
+  document.getElementById('headcountDelta').textContent = '— MoM';
 
   // Payroll
   document.getElementById('payrollVal').textContent = '$' + Math.round(payroll).toLocaleString();
@@ -919,7 +961,6 @@ function updateAll() {
 const CLIENT_ID = '704515119316-o55llqf6qv0c6mjk9srhuu4jvjkioda7.apps.googleusercontent.com';
 const SHEET_ID  = '1dy1hQsGMOLtMXAOyioOX0UkHmVFkzCI04QYES0HO7R0';
 const SCOPES    = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-
 let tokenClient, accessToken = null;
 
 function handleSignIn() {
@@ -952,9 +993,7 @@ function handleSignOut() {
 
 async function showUserInfo() {
   try {
-    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: 'Bearer ' + accessToken }
-    });
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + accessToken } });
     const u = await res.json();
     document.getElementById('userAvatar').src = u.picture;
     document.getElementById('userName').textContent = u.name;
@@ -967,10 +1006,7 @@ function setLoading(msg) {
   document.getElementById('loadingMsg').textContent = msg;
   document.getElementById('overlaySignIn').style.display = 'none';
 }
-
-function hideOverlay() {
-  document.getElementById('loadingOverlay').style.display = 'none';
-}
+function hideOverlay() { document.getElementById('loadingOverlay').style.display = 'none'; }
 
 function getCell(row, col) {
   if (!row || col >= row.length) return 0;
@@ -982,14 +1018,16 @@ function getCell(row, col) {
 }
 
 const COST_COLS = [
-  ['Январь 2026',  2,  3], ['Февраль 2026', 6,  7],
-  ['Март 2026',   10, 11], ['Апрель 2026', 14, 15],
-  ['Май 2026',    18, 19], ['Июнь 2026',   22, 23],
+  ['Январь 2026',   2, 3], ['Февраль 2026',  6, 7],
+  ['Март 2026',    10,11], ['Апрель 2026',  14,15],
+  ['Май 2026',     18,19], ['Июнь 2026',    22,23],
+  ['Июль 2026',    26,27], ['Август 2026',  30,31],
+  ['Сентябрь 2026',34,35], ['Октябрь 2026', 38,39],
+  ['Ноябрь 2026',  42,43], ['Декабрь 2026', 46,47],
 ];
 const PROD_COLS = [
-  ['Январь 2026',  1,  2], ['Февраль 2026', 5,  6],
-  ['Март 2026',    9, 10], ['Апрель 2026', 13, 14],
-  ['Май 2026',    17, 18], ['Июнь 2026',   21, 22],
+  ['Январь 2026',1,2],['Февраль 2026',5,6],['Март 2026',9,10],
+  ['Апрель 2026',13,14],['Май 2026',17,18],['Июнь 2026',21,22],
 ];
 
 function parseCosts(rows) {
@@ -997,9 +1035,7 @@ function parseCosts(rows) {
   if (!rows) return result;
   for (let i = 0; i < Math.min(rows.length, 67); i++) {
     if (rows[i][0] === 'ИТОГО ВСЕГО') {
-      COST_COLS.forEach(([p, bc, ac]) => {
-        result[p] = { budget: getCell(rows[i], bc), actual: getCell(rows[i], ac) };
-      });
+      COST_COLS.forEach(([p,bc,ac]) => { result[p] = { budget: getCell(rows[i],bc), actual: getCell(rows[i],ac) }; });
       break;
     }
   }
@@ -1011,9 +1047,7 @@ function parsePayroll(rows) {
   if (!rows) return result;
   for (let i = 0; i < Math.min(rows.length, 20); i++) {
     if (rows[i] && rows[i][0] === 'ИТОГО: Payroll') {
-      COST_COLS.forEach(([p, bc, ac]) => {
-        result[p] = { budget: getCell(rows[i], bc), actual: getCell(rows[i], ac) };
-      });
+      COST_COLS.forEach(([p,bc,ac]) => { result[p] = { budget: getCell(rows[i],bc), actual: getCell(rows[i],ac) }; });
       break;
     }
   }
@@ -1026,10 +1060,8 @@ function parseProductPivot(rows) {
   PROD_COLS.forEach(([p]) => result[p] = {});
   for (let i = 60; i < rows.length; i++) {
     const label = rows[i][0];
-    if (['COEm', 'COM', 'Others'].includes(label)) {
-      PROD_COLS.forEach(([p, bc, ac]) => {
-        result[p][label] = { budget: getCell(rows[i], bc), actual: getCell(rows[i], ac) };
-      });
+    if (['COEm','COM','Others'].includes(label)) {
+      PROD_COLS.forEach(([p,bc,ac]) => { result[p][label] = { budget: getCell(rows[i],bc), actual: getCell(rows[i],ac) }; });
     }
   }
   return result;
@@ -1041,14 +1073,9 @@ function parseRevenue(rows) {
   for (let i = 2; i < rows.length; i++) {
     const row = rows[i];
     if (!row[0]) continue;
-    const ci = getCell(row,1), ca = getCell(row,17);
-    const oi = getCell(row,7), oa = getCell(row,18);
-    const ot = getCell(row,12);
+    const ci=getCell(row,1),ca=getCell(row,17),oi=getCell(row,7),oa=getCell(row,18),ot=getCell(row,12);
     if (ci+ca+oi+oa+ot === 0) continue;
-    result.push({ period: row[0],
-      coem_inapp: Math.round(ci), coem_ads: Math.round(ca),
-      com_inapp:  Math.round(oi), com_ads:  Math.round(oa),
-      old_titles: Math.round(ot) });
+    result.push({ period:row[0], coem_inapp:Math.round(ci), coem_ads:Math.round(ca), com_inapp:Math.round(oi), com_ads:Math.round(oa), old_titles:Math.round(ot) });
   }
   return result;
 }
@@ -1059,8 +1086,15 @@ function parseUA(rows) {
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (!row[0]) continue;
-    const c = getCell(row,1), o = getCell(row,2);
-    if (c > 0 || o > 0) result[row[0]] = { coem: Math.round(c), com: Math.round(o) };
+    const c=getCell(row,1), o=getCell(row,2);
+    let rc=getCell(row,14), ro=getCell(row,15);
+    // Sheets stores % as 0.86 or as 86 — normalise to 0-100 range
+    if (rc > 0 && rc <= 2) rc = rc * 100;
+    if (ro > 0 && ro <= 2) ro = ro * 100;
+    if (c>0||o>0) result[row[0]] = {
+      coem:Math.round(c), com:Math.round(o),
+      roas_coem: rc || null, roas_com: ro || null
+    };
   }
   return result;
 }
@@ -1071,29 +1105,25 @@ function parseCash(rows) {
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (!row[0]) continue;
-    const cy = getCell(row,1), rb = getCell(row,2);
-    const hc = getCell(row,4); // Headcount from column E
-    if (cy || rb) result[row[0]] = { cyprus: Math.round(cy), rb: Math.round(rb), headcount: hc || null };
+    const cy=getCell(row,1), rb=getCell(row,2), hc=getCell(row,4);
+    if (cy||rb) result[row[0]] = { cyprus:Math.round(cy), rb:Math.round(rb), headcount:hc||null };
   }
   return result;
 }
 
 async function loadAllData() {
   const sheetRanges = [
-    'Revenue!A1:S45', 'UA!A1:L20', 'Cash!A1:F20',
-    'Total!A1:Z85', 'Production!A1:Z30',
-    "'Finance & Legal'!A1:Z30", "'HR & Recruitment'!A1:Z30",
-    "'IT-Infrastructure'!A1:Z30", 'Marketing!A1:Z30',
-    'Operations!A1:Z30', 'BoD!A1:Z35',
+    'Revenue!A1:S45','UA!A1:P20','Cash!A1:F20','Total!A1:AV85',
+    'Production!A1:AV30',"'Finance & Legal'!A1:AV30","'HR & Recruitment'!A1:AV30",
+    "'IT-Infrastructure'!A1:AV30",'Marketing!A1:AV30','Operations!A1:AV30','BoD!A1:AV35',
   ];
-  const params = sheetRanges.map(r => 'ranges=' + encodeURIComponent(r)).join('&');
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?${params}`;
-  const res  = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+  const params = sheetRanges.map(r => 'ranges='+encodeURIComponent(r)).join('&');
+  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchGet?${params}`, { headers: { Authorization: 'Bearer '+accessToken } });
   const data = await res.json();
-  if (data.error) { setLoading('Error: ' + data.error.message); return; }
+  if (data.error) { setLoading('Error: '+data.error.message); return; }
 
-  const vals = data.valueRanges.map(vr => vr.values || []);
-  const [revRows, uaRows, cashRows, totalRows, ...deptRows] = vals;
+  const vals = data.valueRanges.map(vr => vr.values||[]);
+  const [revRows,uaRows,cashRows,totalRows,...deptRows] = vals;
 
   RAW = {
     revenue: parseRevenue(revRows),
@@ -1101,23 +1131,17 @@ async function loadAllData() {
     cash:    parseCash(cashRows),
     payroll: parsePayroll(totalRows),
     costs: {
-      Total:               parseCosts(totalRows),
-      Production:          parseCosts(deptRows[0]),
-      'Finance & Legal':   parseCosts(deptRows[1]),
-      'HR & Recruitment':  parseCosts(deptRows[2]),
-      'IT-Infrastructure': parseCosts(deptRows[3]),
-      Marketing:           parseCosts(deptRows[4]),
-      Operations:          parseCosts(deptRows[5]),
-      BoD:                 parseCosts(deptRows[6]),
+      Total:parseCosts(totalRows), Production:parseCosts(deptRows[0]),
+      'Finance & Legal':parseCosts(deptRows[1]), 'HR & Recruitment':parseCosts(deptRows[2]),
+      'IT-Infrastructure':parseCosts(deptRows[3]), Marketing:parseCosts(deptRows[4]),
+      Operations:parseCosts(deptRows[5]), BoD:parseCosts(deptRows[6]),
     },
     product_pivot: parseProductPivot(totalRows),
     available_periods: [],
   };
 
-  RAW.available_periods = COST_COLS
-    .map(([p]) => p)
-    .filter(p => RAW.costs.Total[p] && RAW.costs.Total[p].actual > 0);
-
+  RAW.available_periods = COST_COLS.map(([p])=>p).filter(p => RAW.costs.Total[p]&&RAW.costs.Total[p].actual>0);
+  RAW.all_periods = COST_COLS.map(([p])=>p).filter(p => RAW.costs.Total[p]&&RAW.costs.Total[p].budget>0);
   updatePeriodSelector();
   buildDeptFilters();
   updateAll();
@@ -1128,11 +1152,12 @@ function updatePeriodSelector() {
   const LABELS = {
     'Январь 2026':'January 2026','Февраль 2026':'February 2026',
     'Март 2026':'March 2026','Апрель 2026':'April 2026',
-    'Май 2026':'May 2026','Июнь 2026':'June 2026'
+    'Май 2026':'May 2026','Июнь 2026':'June 2026',
+    'Июль 2026':'July 2026','Август 2026':'August 2026',
+    'Сентябрь 2026':'September 2026','Октябрь 2026':'October 2026',
+    'Ноябрь 2026':'November 2026','Декабрь 2026':'December 2026'
   };
-  sel.innerHTML = RAW.available_periods.map(p =>
-    `<option value="${p}">${LABELS[p]||p}</option>`
-  ).join('');
+  sel.innerHTML = RAW.available_periods.map(p => `<option value="${p}">${LABELS[p]||p}</option>`).join('');
   sel.value = RAW.available_periods.at(-1);
 }
 </script>
