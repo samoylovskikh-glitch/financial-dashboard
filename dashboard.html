@@ -949,15 +949,17 @@ function updateHRMetrics(period) {
 
 // ── MAIN UPDATE ───────────────────────────────────────────────────────────
 function updateAll() {
+  if (!RAW) return;
   const period = getPeriod();
-  updateKPI(period);
-  updateCash(period);
-  updateHRMetrics(period);
-  updatePie(period);
-  updateWaterfall(period);
-  updateRevBar();
-  updateRevStack();
-  updateGoals();
+  if (!period) return;
+  try { updateKPI(period); } catch(e) { console.error('KPI:', e); }
+  try { updateCash(period); } catch(e) { console.error('Cash:', e); }
+  try { updateHRMetrics(period); } catch(e) { console.error('HR:', e); }
+  try { updatePie(period); } catch(e) { console.error('Pie:', e); }
+  try { updateWaterfall(period); } catch(e) { console.error('Waterfall:', e); }
+  try { updateRevBar(); } catch(e) { console.error('RevBar:', e); }
+  try { updateRevStack(); } catch(e) { console.error('RevStack:', e); }
+  try { updateGoals(); } catch(e) { console.error('Goals:', e); }
 }
 
 // ── GOOGLE AUTH & DATA LOADING ───────────────────────────────────────────
@@ -1109,7 +1111,7 @@ function parseCash(rows) {
     const row = rows[i];
     if (!row[0]) continue;
     const cy=getCell(row,1), rb=getCell(row,2), hc=getCell(row,4);
-    if (cy||rb) result[row[0]] = { cyprus:Math.round(cy), rb:Math.round(rb), headcount:hc||null };
+    if (cy||rb||hc) result[row[0]] = { cyprus:Math.round(cy), rb:Math.round(rb), headcount:hc||null };
   }
   return result;
 }
