@@ -1038,8 +1038,8 @@ const PROD_COLS = [
 function parseCosts(rows) {
   const result = {};
   if (!rows) return result;
-  for (let i = 0; i < Math.min(rows.length, 67); i++) {
-    if (rows[i][0] === 'ИТОГО ВСЕГО') {
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i] && rows[i][0] === 'ИТОГО ВСЕГО') {
       COST_COLS.forEach(([p,bc,ac]) => { result[p] = { budget: getCell(rows[i],bc), actual: getCell(rows[i],ac) }; });
       break;
     }
@@ -1050,7 +1050,7 @@ function parseCosts(rows) {
 function parsePayroll(rows) {
   const result = {};
   if (!rows) return result;
-  for (let i = 0; i < Math.min(rows.length, 20); i++) {
+  for (let i = 0; i < rows.length; i++) {
     if (rows[i] && rows[i][0] === 'ИТОГО: Payroll') {
       COST_COLS.forEach(([p,bc,ac]) => { result[p] = { budget: getCell(rows[i],bc), actual: getCell(rows[i],ac) }; });
       break;
