@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salary Calculator 2026</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#ffffff; --ink:#16203a; --muted:#6b7693;
+    --accent:#2f5cff; --accent2:#7c3aed; --green:#0e9f6e; --amber:#d97706; --red:#dc2626;
+    --line:#e6eaf3; --chip:#eef2ff; --radius:16px;
+    --shadow:0 4px 24px rgba(22,32,58,.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 16px 64px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo .ic{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700}
+  .logo h1{font-size:20px;font-weight:700}
+  .logo p{font-size:12.5px;color:var(--muted)}
+  .lang{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .lang button{border:0;background:transparent;padding:7px 14px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .lang button.on{background:var(--accent);color:#fff}
+  .grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+  select,input[type=number],input[type=text]{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;background:#fff;color:var(--ink);outline:none;transition:border .15s}
+  select:focus,input:focus{border-color:var(--accent)}
+  .locbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .locbtns button{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;transition:.15s}
+  .locbtns button.on{border-color:var(--accent);background:var(--chip);color:var(--accent)}
+  .typebtns{display:flex;flex-direction:column;gap:8px}
+  .typebtns button{text-align:left;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:#fff;font-size:14px;cursor:pointer;transition:.15s}
+  .typebtns button.on{border-color:var(--accent);background:var(--chip);color:var(--accent);font-weight:600}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .bigres{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  @media(max-width:560px){.bigres{grid-template-columns:1fr}}
+  .res{border-radius:14px;padding:16px;border:1px solid var(--line)}
+  .res .t{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+  .res .v{font-size:24px;font-weight:800;letter-spacing:-.5px}
+  .res .s{font-size:12px;color:var(--muted);margin-top:4px}
+  .res.net{background:#ecfdf5;border-color:#bbe9d4}.res.net .t{color:var(--green)}
+  .res.gross{background:#eef2ff;border-color:#cdd8ff}.res.gross .t{color:var(--accent)}
+  .res.total{background:#fdf3e7;border-color:#f3ddbe}.res.total .t{color:var(--amber)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:1.5px solid var(--line)}
+  th:last-child,td:last-child{text-align:right}
+  td{padding:9px 6px;border-bottom:1px solid var(--line)}
+  tr.sub td{color:var(--muted);font-size:13px}
+  tr.tot td{font-weight:800;border-top:2px solid var(--ink);border-bottom:0}
+  .pill{display:inline-block;background:var(--chip);color:var(--accent);font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;margin-left:6px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:14px;background:#f8f9fd;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .warn{font-size:12.5px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-top:12px;display:none}
+  .warn.red{color:#991b1b;background:#fee2e2;border-color:#fecaca;font-weight:600}
+  details{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  details summary{cursor:pointer;padding:12px 14px;font-size:13.5px;font-weight:700;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px}
+  details summary::before{content:'⚙';font-size:15px}
+  details .inner{padding:4px 14px 16px}
+  .rates-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+  .rates-grid label{margin:8px 0 4px;font-size:12px;color:var(--muted)}
+  .rates-grid input{padding:8px 10px;font-size:13.5px}
+  .fxbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:6px}
+  .fxbar .fxitem{background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 8px;display:flex;gap:5px;align-items:center}
+  .fxbar input{width:84px;padding:4px 6px;font-size:12.5px;border:1px solid var(--line);border-radius:6px}
+  .btn{border:0;background:var(--accent);color:#fff;font-weight:700;font-size:13px;border-radius:9px;padding:8px 14px;cursor:pointer}
+  .btn.ghost{background:var(--chip);color:var(--accent)}
+  .muted{color:var(--muted)}
+  .annual{font-size:12.5px;color:var(--muted)}
+  footer{margin-top:26px;font-size:12px;color:var(--muted);line-height:1.6;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <div class="ic">₸</div>
+      <div><h1 data-i18n="title">Зарплатный калькулятор 2026</h1><p data-i18n="subtitle">Net → Gross → Total: налоги и полная стоимость найма</p></div>
+    </div>
+    <div class="lang"><button id="langRu" class="on">RU</button><button id="langEn">EN</button></div>
+  </header>
+
+  <div class="grid">
+    <!-- ===================== INPUTS ===================== -->
+    <div class="card">
+      <h2 data-i18n="params">Параметры</h2>
+
+      <label data-i18n="location">Локация</label>
+      <div class="locbtns" id="locBtns"></div>
+
+      <label data-i18n="hiretype">Способ найма</label>
+      <div class="typebtns" id="typeBtns"></div>
+
+      <label data-i18n="inputmode">Рассчитывать от</label>
+      <select id="modeInput">
+        <option value="net" data-i18n-opt="modenet">Net — на руки</option>
+        <option value="gross" data-i18n-opt="modegross">Gross — официальная зарплата</option>
+        <option value="total" data-i18n-opt="modetotal">Total — бюджет компании</option>
+      </select>
+      <div class="row2">
+        <div>
+          <label data-i18n="netsalary">Сумма в месяц</label>
+          <input type="number" id="netInput" value="2000" min="0" step="50">
+        </div>
+        <div>
+          <label data-i18n="currency">Валюта</label>
+          <select id="curInput"><option value="USD">USD $</option><option value="EUR">EUR €</option></select>
+        </div>
+      </div>
+
+      <div id="cyExtra" style="display:none">
+        <label data-i18n="cyexempt">Налоговая льгота (Кипр)</label>
+        <select id="cyExempt">
+          <option value="none" data-i18n-opt="exnone">Без льготы</option>
+          <option value="e20" data-i18n-opt="ex20">20% (макс €8 550) — новый резидент</option>
+          <option value="e50" data-i18n-opt="ex50">50% — доход от €55 000/год</option>
+        </select>
+        <div class="row2">
+          <div>
+            <label data-i18n="cykids">Дети-иждивенцы (до 18; студенты — до 24)</label>
+            <input type="number" id="cyKids" value="0" min="0" max="10" step="1">
+          </div>
+          <div>
+            <label data-i18n="cyhousing">Ипотека/аренда, €/год (макс 2 000)</label>
+            <input type="number" id="cyHousing" value="0" min="0" step="100">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label data-i18n="cygreen">Энергоэфф./EV, €/год (макс 1 000)</label>
+            <input type="number" id="cyGreen" value="0" min="0" step="100">
+          </div>
+          <div>
+            <label data-i18n="cyins">Страхование, €/год (макс 500)</label>
+            <input type="number" id="cyIns" value="0" min="0" step="50">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label data-i18n="cyspouse">Доход супруга(и) gross, €/год</label>
+            <input type="number" id="cySpouse" value="0" min="0" step="1000">
+          </div>
+          <div>
+            <label data-i18n="cysingle">Одинокий родитель</label>
+            <select id="cySingle">
+              <option value="no" data-i18n-opt="optno">Нет</option>
+              <option value="yes" data-i18n-opt="optyes">Да (вычет на детей ×2)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="amExtra" style="display:none">
+        <label data-i18n="amregime">Налоговый режим (Армения)</label>
+        <select id="amRegime">
+          <option value="standard" data-i18n-opt="amstd">Налог с оборота 10% (услуги)</option>
+          <option value="hitech" data-i18n-opt="amht">Hi-Tech сертификат — 1%</option>
+        </select>
+      </div>
+
+      <details>
+        <summary data-i18n="fxs">Курсы валют</summary>
+        <div class="inner">
+          <div class="fxbar" id="fxBar"></div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn" id="fxRefresh" data-i18n="fxupd">Обновить с API</button>
+            <button class="btn ghost" id="fxReset" data-i18n="fxreset">Сбросить правки</button>
+          </div>
+          <div class="note" id="fxStatus"></div>
+        </div>
+      </details>
+
+      <details>
+        <summary data-i18n="ratesedit">Налоговые ставки (редактируемые)</summary>
+        <div class="inner"><div class="rates-grid" id="ratesGrid"></div></div>
+      </details>
+    </div>
+
+    <!-- ===================== RESULTS ===================== -->
+    <div class="card">
+      <h2 data-i18n="result">Результат <span class="pill" id="resPill"></span></h2>
+      <div class="bigres">
+        <div class="res net"><div class="t">Net</div><div class="v" id="rNet">—</div><div class="s" data-i18n="netdesc">на руки / в месяц</div><div class="annual" id="rNetY"></div></div>
+        <div class="res gross"><div class="t">Gross</div><div class="v" id="rGross">—</div><div class="s" data-i18n="grossdesc">официальная зарплата</div><div class="annual" id="rGrossY"></div></div>
+        <div class="res total"><div class="t">Total</div><div class="v" id="rTotal">—</div><div class="s" data-i18n="totaldesc">стоимость для компании</div><div class="annual" id="rTotalY"></div></div>
+      </div>
+
+      <table id="taxTable">
+        <thead><tr><th data-i18n="thtax">Налог / взнос</th><th data-i18n="thrate">Ставка</th><th data-i18n="thmonth">В месяц</th></tr></thead>
+        <tbody id="taxBody"></tbody>
+      </table>
+
+      <div class="warn" id="warnBox"></div>
+      <div class="note" id="noteBox"></div>
+    </div>
+  </div>
+
+  <footer id="footNote"></footer>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   I18N
+============================================================ */
+const I18N = {
+  ru:{
+    title:'Зарплатный калькулятор 2026', subtitle:'Net → Gross → Total: налоги и полная стоимость найма',
+    params:'Параметры', location:'Локация', hiretype:'Способ найма',
+    netsalary:'Сумма в месяц', currency:'Валюта',
+    inputmode:'Рассчитывать от', modenet:'Net — на руки', modegross:'Gross — официальная зарплата', modetotal:'Total — бюджет компании',
+    cyexempt:'Налоговая льгота (Кипр)', exnone:'Без льготы', ex20:'20% (макс €8 550) — новый резидент', ex50:'50% — доход от €55 000/год',
+    cykids:'Дети-иждивенцы (до 18; студенты — до 24)', cyhousing:'Ипотека/аренда, €/год (макс 2 000)', cygreen:'Энергоэфф./EV, €/год (макс 1 000)', cyins:'Страхование, €/год (макс 500)',
+    cyspouse:'Доход супруга(и) gross, €/год', cysingle:'Одинокий родитель', optno:'Нет', optyes:'Да (вычет на детей ×2)',
+    cyDedCut:'Вычеты 2026 не применены: валовый доход семьи (оба супруга) выше порога — €100k (0–2 детей), €150k (3–4), €200k (5+)',
+    cyDedCapped:'Сработало правило 1/5: совокупные вычеты из базы (соцстрах + GESY + вычеты) ограничены 20% дохода — учтено в расчёте.',
+    amregime:'Налоговый режим (Армения)', amstd:'Налог с оборота 10% (услуги)', amht:'Hi-Tech сертификат — 1%',
+    fxs:'Курсы валют', fxupd:'Обновить с API', fxreset:'Сбросить правки',
+    ratesedit:'Налоговые ставки (редактируемые)',
+    result:'Результат', netdesc:'на руки / в месяц', grossdesc:'официальная зарплата', totaldesc:'стоимость для компании',
+    thtax:'Налог / взнос', thrate:'Ставка', thmonth:'В месяц',
+    empTaxes:'Налоги работника', erTaxes:'Налоги работодателя', totTaxes:'Итого налоги',
+    burden:'Налоговая нагрузка', peryear:'в год',
+    fxAuto:'Курсы загружены автоматически', fxManual:'Используются ручные значения (выделено)', fxFail:'Не удалось загрузить курсы — используются сохранённые значения. Можно ввести вручную.',
+    locs:{cy:'Кипр',by:'Беларусь',ru:'Россия',am:'Армения',ge:'Грузия'},
+    types:{employment:'Трудовой договор',civil:'Договор ГПХ',ie:'ИП',selfemp:'Самозанятый (НПД)'},
+    foot:'Ставки актуальны на 2026 год и могут редактироваться в настройках. Расчёт носит справочный характер и не заменяет консультацию налогового специалиста.',
+    inLocal:'в местной валюте',
+    warnNPD:'Режим неприменим: годовой доход превышает лимит НПД 2,4 млн ₽. Самозанятость использовать нельзя — рассмотрите ИП на УСН.',
+    warnAM:'Режим неприменим: годовой оборот превышает лимит налога с оборота 115 млн AMD. Требуется общий режим (НДС 20% + подоходный налог) — расчёт по текущей ставке недействителен.',
+    warnGE:'Оборот свыше 500 000 GEL/год: превышение облагается по 3% (учтено). При превышении лимита 2 года подряд статус Small Business аннулируется (далее 20% с прибыли).',
+    taxNames:{
+      pit:'Подоходный налог', sife:'Соцстрахование (работник)', gesye:'GESY (работник)',
+      sifr:'Соцстрахование + фонды (работодатель)', cohesion:'Фонд соц. сплочённости', gesyr:'GESY (работодатель)',
+      fszn1:'ФСЗН 1% (работник)', fszn34:'ФСЗН 34% (работодатель)', bgs:'Белгосстрах',
+      ipTax:'Подоходный налог ИП (эфф. 16%)', ipFszn:'ФСЗН ИП (фикс.)',
+      usn:'УСН 6%', fixed:'Фикс. взносы ИП', npd:'НПД 6%',
+      turnover:'Налог с оборота', social:'Соцплатёж', stamp:'Гербовый сбор (армия)', health:'ОМС (Армения)',
+      sbs:'Налог Small Business'
+    }
+  },
+  en:{
+    title:'Salary Calculator 2026', subtitle:'Net → Gross → Total: taxes and full cost of hiring',
+    params:'Parameters', location:'Location', hiretype:'Type of contract',
+    netsalary:'Amount per month', currency:'Currency',
+    inputmode:'Calculate from', modenet:'Net — take-home', modegross:'Gross — official salary', modetotal:'Total — company budget',
+    cyexempt:'Tax exemption (Cyprus)', exnone:'No exemption', ex20:'20% (max €8,550) — new resident', ex50:'50% — income over €55,000/yr',
+    cykids:'Dependent children (under 18; students — up to 24)', cyhousing:'Mortgage/rent, €/yr (max 2,000)', cygreen:'Green/EV, €/yr (max 1,000)', cyins:'Insurance, €/yr (max 500)',
+    cyspouse:'Spouse gross income, €/yr', cysingle:'Single parent', optno:'No', optyes:'Yes (child deduction ×2)',
+    cyDedCut:'2026 deductions not applied: gross family income (both spouses) above threshold — €100k (0–2 children), €150k (3–4), €200k (5+)',
+    cyDedCapped:'1/5 rule applied: total deductions from the tax base (SI + GESY + allowances) are limited to 20% of income — included in the calculation.',
+    amregime:'Tax regime (Armenia)', amstd:'Turnover tax 10% (services)', amht:'Hi-Tech certificate — 1%',
+    fxs:'Exchange rates', fxupd:'Refresh from API', fxreset:'Reset overrides',
+    ratesedit:'Tax rates (editable)',
+    result:'Result', netdesc:'take-home / month', grossdesc:'official salary', totaldesc:'cost for the company',
+    thtax:'Tax / contribution', thrate:'Rate', thmonth:'Per month',
+    empTaxes:'Employee taxes', erTaxes:'Employer taxes', totTaxes:'Total taxes',
+    burden:'Tax burden', peryear:'per year',
+    fxAuto:'Rates loaded automatically', fxManual:'Manual overrides in use (highlighted)', fxFail:'Could not load rates — using saved values. You can enter them manually.',
+    locs:{cy:'Cyprus',by:'Belarus',ru:'Russia',am:'Armenia',ge:'Georgia'},
+    types:{employment:'Employment contract',civil:'Civil contract',ie:'Individual entrepreneur',selfemp:'Self-employed (NPD)'},
+    foot:'Rates are valid for 2026 and can be edited in settings. This calculation is for reference only and does not replace advice from a tax professional.',
+    inLocal:'in local currency',
+    warnNPD:'Regime not applicable: annual income exceeds the NPD limit of RUB 2.4M. Self-employed status cannot be used — consider IE on the simplified regime.',
+    warnAM:'Regime not applicable: annual turnover exceeds the AMD 115M turnover-tax limit. The general regime applies (VAT 20% + income tax) — the current calculation is not valid.',
+    warnGE:'Turnover above GEL 500,000/yr: the excess is taxed at 3% (included). If exceeded two years in a row, Small Business status is revoked (then 20% on profit).',
+    taxNames:{
+      pit:'Income tax', sife:'Social insurance (employee)', gesye:'GESY (employee)',
+      sifr:'Social insurance + funds (employer)', cohesion:'Social cohesion fund', gesyr:'GESY (employer)',
+      fszn1:'Social fund 1% (employee)', fszn34:'Social fund 34% (employer)', bgs:'Belgosstrakh',
+      ipTax:'IE income tax (eff. 16%)', ipFszn:'IE social fund (fixed)',
+      usn:'Simplified tax 6%', fixed:'IE fixed contributions', npd:'NPD 6%',
+      turnover:'Turnover tax', social:'Social payment', stamp:'Stamp duty (military)', health:'Health insurance (Armenia)',
+      sbs:'Small Business tax'
+    }
+  }
+};
+let lang = localStorage.getItem('sc_lang') || 'ru';
+
+/* ============================================================
+   LOCATIONS / TYPES
+============================================================ */
+const LOCATIONS = {
+  cy:{flag:'🇨🇾', types:['employment'], local:'EUR'},
+  by:{flag:'🇧🇾', types:['employment','civil','ie'], local:'BYN'},
+  ru:{flag:'🇷🇺', types:['ie','selfemp'], local:'RUB'},
+  am:{flag:'🇦🇲', types:['ie'], local:'AMD'},
+  ge:{flag:'🇬🇪', types:['ie'], local:'GEL'}
+};
+let state = { loc:'cy', type:'employment' };
+
+/* ============================================================
+   EDITABLE TAX PARAMETERS (defaults = 2026 legislation)
+============================================================ */
+const PARAM_DEFS = [
+  // Cyprus
+  {id:'cy_si_emp', loc:'cy', ru:'Кипр: соцстрах работника, %', en:'CY: SI employee, %', v:8.8},
+  {id:'cy_si_cap', loc:'cy', ru:'Кипр: потолок соцстраха, €/год', en:'CY: SI ceiling, €/yr', v:68904},
+  {id:'cy_gesy_emp', loc:'cy', ru:'Кипр: GESY работника, %', en:'CY: GESY employee, %', v:2.65},
+  {id:'cy_si_er', loc:'cy', ru:'Кипр: соцстрах+фонды работодателя, %', en:'CY: SI+funds employer, %', v:10.5},
+  {id:'cy_cohesion', loc:'cy', ru:'Кипр: фонд сплочённости, %', en:'CY: cohesion fund, %', v:2},
+  {id:'cy_gesy_er', loc:'cy', ru:'Кипр: GESY работодателя, %', en:'CY: GESY employer, %', v:2.9},
+  // Belarus
+  {id:'by_pit', loc:'by', ru:'РБ: подоходный налог, %', en:'BY: income tax, %', v:13},
+  {id:'by_fszn_emp', loc:'by', ru:'РБ: ФСЗН работника, %', en:'BY: social fund employee, %', v:1},
+  {id:'by_fszn_er', loc:'by', ru:'РБ: ФСЗН работодателя, %', en:'BY: social fund employer, %', v:34},
+  {id:'by_bgs', loc:'by', ru:'РБ: Белгосстрах, %', en:'BY: Belgosstrakh, %', v:0.37},
+  {id:'by_avg', loc:'by', ru:'РБ: средняя ЗП (база ПВТ), BYN', en:'BY: average salary (HTP base), BYN', v:3100},
+  {id:'by_ie_eff', loc:'by', ru:'РБ: эфф. налог ИП, % от оборота', en:'BY: IE effective tax, % of turnover', v:16},
+  {id:'by_ie_fszn', loc:'by', ru:'РБ: ФСЗН ИП, BYN/год', en:'BY: IE social fund, BYN/yr', v:3603.6},
+  // Russia
+  {id:'ru_usn', loc:'ru', ru:'РФ: УСН, %', en:'RU: simplified tax, %', v:6},
+  {id:'ru_fix', loc:'ru', ru:'РФ: фикс. взносы ИП, ₽/год', en:'RU: IE fixed contrib., RUB/yr', v:57390},
+  {id:'ru_extra_cap', loc:'ru', ru:'РФ: макс. взнос 1%, ₽/год', en:'RU: 1% contrib. cap, RUB/yr', v:321818},
+  {id:'ru_npd', loc:'ru', ru:'РФ: НПД (с юрлицами), %', en:'RU: NPD rate (B2B), %', v:6},
+  {id:'ru_npd_limit', loc:'ru', ru:'РФ: лимит НПД, ₽/год', en:'RU: NPD limit, RUB/yr', v:2400000},
+  // Armenia
+  {id:'am_turnover', loc:'am', ru:'Армения: налог с оборота (услуги), %', en:'AM: turnover tax (services), %', v:10},
+  {id:'am_hitech', loc:'am', ru:'Армения: ставка Hi-Tech, %', en:'AM: Hi-Tech rate, %', v:1},
+  {id:'am_social', loc:'am', ru:'Армения: соцплатёж, %', en:'AM: social payment, %', v:5},
+  {id:'am_stamp_lo', loc:'am', ru:'Армения: герб. сбор (≤12 млн AMD), AMD/год', en:'AM: stamp duty (≤12M AMD), AMD/yr', v:12000},
+  {id:'am_stamp_hi', loc:'am', ru:'Армения: герб. сбор (>12 млн AMD), AMD/год', en:'AM: stamp duty (>12M AMD), AMD/yr', v:120000},
+  {id:'am_health', loc:'am', ru:'Армения: ОМС, AMD/год', en:'AM: health insurance, AMD/yr', v:129600},
+  // Georgia
+  {id:'ge_sbs', loc:'ge', ru:'Грузия: Small Business, %', en:'GE: Small Business, %', v:1},
+  {id:'ge_sbs_hi', loc:'ge', ru:'Грузия: ставка свыше лимита, %', en:'GE: rate above limit, %', v:3},
+  {id:'ge_limit', loc:'ge', ru:'Грузия: лимит SBS, GEL/год', en:'GE: SBS limit, GEL/yr', v:500000}
+];
+let P = {};
+(function loadParams(){
+  const saved = JSON.parse(localStorage.getItem('sc_params')||'{}');
+  PARAM_DEFS.forEach(d => P[d.id] = (saved[d.id]!==undefined ? saved[d.id] : d.v));
+})();
+function saveParams(){ localStorage.setItem('sc_params', JSON.stringify(P)); }
+
+/* ============================================================
+   FX RATES (per 1 USD)
+============================================================ */
+const FX_KEYS = ['EUR','RUB','BYN','AMD','GEL'];
+let fx = Object.assign({EUR:0.866,RUB:72.0,BYN:2.754,AMD:382,GEL:2.70},
+  JSON.parse(localStorage.getItem('sc_fx')||'{}'));
+let fxOverrides = JSON.parse(localStorage.getItem('sc_fx_over')||'{}');
+let fxLoaded = false;
+
+async function fetchFx(){
+  try{
+    const r = await fetch('https://open.er-api.com/v6/latest/USD');
+    const j = await r.json();
+    if(j && j.rates){
+      FX_KEYS.forEach(k => { if(j.rates[k]) fx[k] = j.rates[k]; });
+      localStorage.setItem('sc_fx', JSON.stringify(fx));
+      fxLoaded = true;
+    }
+  }catch(e){ fxLoaded = false; }
+  renderFx(); calc();
+}
+function rate(k){ return fxOverrides[k]!==undefined ? fxOverrides[k] : fx[k]; } // per 1 USD
+// convert amount between currencies (USD-pivot)
+function conv(amount, from, to){
+  if(from===to) return amount;
+  const usd = from==='USD' ? amount : amount / rate(from);
+  return to==='USD' ? usd : usd * rate(to);
+}
+
+/* ============================================================
+   TAX ENGINES — each takes annual GROSS/turnover in LOCAL currency,
+   returns {net, total, items:[{key,rate,amount,side}]} (annual, local)
+============================================================ */
+function pct(x){ return x/100; }
+
+function cyprusPIT(taxable){
+  const br = [[22000,0],[32000,.20],[42000,.25],[72000,.30],[Infinity,.35]];
+  let tax=0, prev=0;
+  for(const [up,r] of br){ if(taxable>prev) tax += (Math.min(taxable,up)-prev)*r; prev=up; if(taxable<=up) break; }
+  return tax;
+}
+function cyDeductions2026(G){
+  // Налоговая реформа Кипра 2026: вычеты на детей, жильё, энергоэффективность, страхование.
+  // Порог применяется к ВАЛОВОМУ ДОХОДУ СЕМЬИ (оба супруга): 0–2 детей — 100k, 3–4 — 150k, 5+ — 200k.
+  // При соблюдении порога вычет на детей получает каждый супруг; одинокий родитель — в двойном размере.
+  const kids = Math.max(0, parseInt(document.getElementById('cyKids').value)||0);
+  const spouse = Math.max(0, parseFloat(document.getElementById('cySpouse').value)||0);
+  const single = document.getElementById('cySingle').value==='yes';
+  const familyIncome = G + spouse;
+  const cap = kids>=5 ? 200000 : (kids>=3 ? 150000 : 100000);
+  if(familyIncome > cap) return {sum:0, cut:true, any: kids>0 || (parseFloat(document.getElementById('cyHousing').value)||0)>0 || (parseFloat(document.getElementById('cyGreen').value)||0)>0 || (parseFloat(document.getElementById('cyIns').value)||0)>0};
+  let kidsDed = 0;
+  for(let i=1;i<=kids;i++) kidsDed += i===1 ? 1000 : (i===2 ? 1250 : 1500);
+  if(single) kidsDed *= 2;
+  const housing = Math.min(2000, Math.max(0, parseFloat(document.getElementById('cyHousing').value)||0));
+  const green = Math.min(1000, Math.max(0, parseFloat(document.getElementById('cyGreen').value)||0));
+  const ins = Math.min(500, Math.max(0, parseFloat(document.getElementById('cyIns').value)||0));
+  return {sum: kidsDed + housing + green + ins, cut:false, any:false};
+}
+function engine_cy(G){
+  const siBase = Math.min(G, P.cy_si_cap);
+  const si = siBase*pct(P.cy_si_emp);
+  const gesy = Math.min(G,180000)*pct(P.cy_gesy_emp);
+  let exemption = 0;
+  const ex = document.getElementById('cyExempt').value;
+  if(ex==='e20') exemption = Math.min(G*0.20, 8550);
+  if(ex==='e50' && G>55000) exemption = G*0.50;
+  const ded = cyDeductions2026(G);
+  // Правило 1/5: совокупные вычеты из базы (соцстрах + GESY + вычеты ст.14/14B)
+  // не могут превышать 1/5 ЧИСТОГО СОВОКУПНОГО ДОХОДА — т.е. дохода ПОСЛЕ льготы 20%/50%.
+  const dedCap = Math.max(0, G - exemption)/5;
+  const dedTotal = Math.min(si + gesy + ded.sum, dedCap);
+  const dedCapped = (si + gesy + ded.sum) > dedCap;
+  const taxable = Math.max(0, G - exemption - dedTotal);
+  const pit = cyprusPIT(taxable);
+  const erSi = siBase*pct(P.cy_si_er);
+  const erCo = G*pct(P.cy_cohesion);
+  const erGesy = Math.min(G,180000)*pct(P.cy_gesy_er);
+  return {
+    net: G - si - gesy - pit,
+    total: G + erSi + erCo + erGesy,
+    dedCut: ded.cut && ded.any,
+    dedSum: ded.sum,
+    dedCapped: dedCapped,
+    dedApplied: dedTotal,
+    items:[
+      {key:'pit', rate:'0–35%', amount:pit, side:'e'},
+      {key:'sife', rate:P.cy_si_emp+'%', amount:si, side:'e'},
+      {key:'gesye', rate:P.cy_gesy_emp+'%', amount:gesy, side:'e'},
+      {key:'sifr', rate:P.cy_si_er+'%', amount:erSi, side:'r'},
+      {key:'cohesion', rate:P.cy_cohesion+'%', amount:erCo, side:'r'},
+      {key:'gesyr', rate:P.cy_gesy_er+'%', amount:erGesy, side:'r'}
+    ]
+  };
+}
+function engine_by_employment(G){
+  const avg = P.by_avg*12; // annual average salary base (HTP benefit: employer SI from avg salary)
+  const fszn1 = Math.min(G,avg)*pct(P.by_fszn_emp);
+  const pit = G*pct(P.by_pit);
+  const erFszn = Math.min(G,avg)*pct(P.by_fszn_er);
+  const bgs = G*pct(P.by_bgs);
+  return {
+    net: G - pit - fszn1,
+    total: G + erFszn + bgs,
+    items:[
+      {key:'pit', rate:P.by_pit+'%', amount:pit, side:'e'},
+      {key:'fszn1', rate:P.by_fszn_emp+'%', amount:fszn1, side:'e'},
+      {key:'fszn34', rate:P.by_fszn_er+'%', amount:erFszn, side:'r'},
+      {key:'bgs', rate:P.by_bgs+'%', amount:bgs, side:'r'}
+    ]
+  };
+}
+function engine_by_civil(G){
+  const fszn1 = G*pct(P.by_fszn_emp);
+  const pit = G*pct(P.by_pit);
+  const erFszn = G*pct(P.by_fszn_er);
+  const bgs = G*pct(P.by_bgs);
+  return {
+    net: G - pit - fszn1,
+    total: G + erFszn + bgs,
+    items:[
+      {key:'pit', rate:P.by_pit+'%', amount:pit, side:'e'},
+      {key:'fszn1', rate:P.by_fszn_emp+'%', amount:fszn1, side:'e'},
+      {key:'fszn34', rate:P.by_fszn_er+'%', amount:erFszn, side:'r'},
+      {key:'bgs', rate:P.by_bgs+'%', amount:bgs, side:'r'}
+    ]
+  };
+}
+function engine_by_ie(T){
+  const tax = T*pct(P.by_ie_eff);
+  const fszn = P.by_ie_fszn;
+  return {
+    net: T - tax - fszn, total: T,
+    items:[
+      {key:'ipTax', rate:P.by_ie_eff+'%', amount:tax, side:'e'},
+      {key:'ipFszn', rate:'fix', amount:fszn, side:'e'}
+    ]
+  };
+}
+function engine_ru_ie(T){
+  const usn = T*pct(P.ru_usn);
+  const extra = Math.min(P.ru_extra_cap, Math.max(0,(T-300000))*0.01);
+  const contrib = P.ru_fix + extra;
+  // УСН 6% уменьшается на взносы (ИП без работников) — платится max(УСН, взносы)
+  const tax = Math.max(usn, contrib);
+  const items = usn >= contrib
+    ? [{key:'usn', rate:P.ru_usn+'%', amount:usn, side:'e'},
+       {key:'fixed', rate:'→0', amount:0, side:'e'}]
+    : [{key:'usn', rate:'→0', amount:0, side:'e'},
+       {key:'fixed', rate:'fix+1%', amount:contrib, side:'e'}];
+  return { net: T - tax, total: T, items };
+}
+function engine_ru_selfemp(T){
+  const tax = T*pct(P.ru_npd);
+  return { net: T - tax, total: T,
+    items:[{key:'npd', rate:P.ru_npd+'%', amount:tax, side:'e'}] };
+}
+function engine_am(T){
+  const regime = document.getElementById('amRegime').value;
+  const tr = regime==='hitech' ? P.am_hitech : P.am_turnover;
+  const turnover = T*pct(tr);
+  const social = T<=6000000 ? T*pct(P.am_social) : Math.max(0, T*0.10 - 300000);
+  const stamp = T<=12000000 ? P.am_stamp_lo : P.am_stamp_hi;
+  const health = T>2400000 ? P.am_health : 0;
+  return { net: T - turnover - social - stamp - health, total: T,
+    items:[
+      {key:'turnover', rate:tr+'%', amount:turnover, side:'e'},
+      {key:'social', rate:T<=6000000?P.am_social+'%':'10%−300k', amount:social, side:'e'},
+      {key:'stamp', rate:'fix', amount:stamp, side:'e'},
+      {key:'health', rate:'fix', amount:health, side:'e'}
+    ]
+  };
+}
+function engine_ge(T){
+  const lim = P.ge_limit;
+  const tax = Math.min(T,lim)*pct(P.ge_sbs) + Math.max(0,T-lim)*pct(P.ge_sbs_hi);
+  return { net: T - tax, total: T,
+    items:[{key:'sbs', rate: T>lim ? P.ge_sbs+'% / '+P.ge_sbs_hi+'%' : P.ge_sbs+'%', amount:tax, side:'e'}] };
+}
+function getEngine(){
+  const k = state.loc + '_' + state.type;
+  if(state.loc==='cy') return engine_cy;
+  if(k==='by_employment') return engine_by_employment;
+  if(k==='by_civil') return engine_by_civil;
+  if(k==='by_ie') return engine_by_ie;
+  if(k==='ru_ie') return engine_ru_ie;
+  if(k==='ru_selfemp') return engine_ru_selfemp;
+  if(state.loc==='am') return engine_am;
+  if(state.loc==='ge') return engine_ge;
+  return engine_ge;
+}
+
+/* ============================================================
+   NET → GROSS solver (bisection on annual local gross/turnover)
+============================================================ */
+function solveGross(netAnnualLocal, engine){
+  let lo = netAnnualLocal, hi = netAnnualLocal*4 + 1e6;
+  // ensure hi is high enough
+  for(let i=0;i<60;i++){
+    if(engine(hi).net >= netAnnualLocal) break;
+    hi *= 2;
+  }
+  for(let i=0;i<200;i++){
+    const mid = (lo+hi)/2;
+    if(engine(mid).net < netAnnualLocal) lo = mid; else hi = mid;
+  }
+  return (lo+hi)/2;
+}
+// TOTAL → GROSS: подбор gross, при котором полная стоимость для компании равна бюджету
+function solveGrossFromTotal(totalAnnualLocal, engine){
+  let lo = 0, hi = totalAnnualLocal + 1e6;
+  for(let i=0;i<60;i++){
+    if(engine(hi).total >= totalAnnualLocal) break;
+    hi *= 2;
+  }
+  for(let i=0;i<200;i++){
+    const mid = (lo+hi)/2;
+    if(engine(mid).total < totalAnnualLocal) lo = mid; else hi = mid;
+  }
+  return (lo+hi)/2;
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+const $$ = id => document.getElementById(id);
+function t(key){ return I18N[lang][key]; }
+
+function fmt(n, cur){
+  const symbols = {USD:'$',EUR:'€',RUB:'₽',BYN:'Br',AMD:'֏',GEL:'₾'};
+  const s = symbols[cur]||'';
+  return s + n.toLocaleString(lang==='ru'?'ru-RU':'en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmt2(n, cur){
+  const symbols = {USD:'$',EUR:'€',RUB:'₽',BYN:'Br',AMD:'֏',GEL:'₾'};
+  return (symbols[cur]||'') + n.toLocaleString(lang==='ru'?'ru-RU':'en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function renderLocs(){
+  $$('locBtns').innerHTML = Object.keys(LOCATIONS).map(k =>
+    `<button data-loc="${k}" class="${state.loc===k?'on':''}">${LOCATIONS[k].flag} ${t('locs')[k]}</button>`).join('');
+  $$('locBtns').querySelectorAll('button').forEach(b => b.onclick = ()=>{
+    state.loc = b.dataset.loc;
+    if(!LOCATIONS[state.loc].types.includes(state.type)) state.type = LOCATIONS[state.loc].types[0];
+    renderLocs(); renderTypes(); renderExtras(); renderRates(); calc();
+  });
+}
+function renderTypes(){
+  $$('typeBtns').innerHTML = LOCATIONS[state.loc].types.map(tp =>
+    `<button data-type="${tp}" class="${state.type===tp?'on':''}">${t('types')[tp]}</button>`).join('');
+  $$('typeBtns').querySelectorAll('button').forEach(b => b.onclick = ()=>{
+    state.type = b.dataset.type; renderTypes(); calc();
+  });
+}
+function renderExtras(){
+  $$('cyExtra').style.display = state.loc==='cy' ? '' : 'none';
+  $$('amExtra').style.display = state.loc==='am' ? '' : 'none';
+}
+function renderFx(){
+  $$('fxBar').innerHTML = FX_KEYS.map(k=>{
+    const over = fxOverrides[k]!==undefined;
+    return `<div class="fxitem">USD/${k} <input type="number" step="0.0001" data-fx="${k}" value="${(+rate(k)).toFixed(4)}" style="${over?'border-color:var(--amber);background:#fffbeb':''}"></div>`;
+  }).join('');
+  $$('fxBar').querySelectorAll('input').forEach(inp => inp.onchange = ()=>{
+    const k = inp.dataset.fx, v = parseFloat(inp.value);
+    if(v>0){ fxOverrides[k]=v; localStorage.setItem('sc_fx_over',JSON.stringify(fxOverrides)); }
+    renderFx(); calc();
+  });
+  const anyOver = Object.keys(fxOverrides).length>0;
+  $$('fxStatus').textContent = anyOver ? t('fxManual') : (fxLoaded ? t('fxAuto') : t('fxFail'));
+}
+function renderRates(){
+  $$('ratesGrid').innerHTML = PARAM_DEFS.filter(d=>d.loc===state.loc).map(d=>
+    `<div><label>${lang==='ru'?d.ru:d.en}</label><input type="number" step="any" data-p="${d.id}" value="${P[d.id]}"></div>`).join('');
+  $$('ratesGrid').querySelectorAll('input').forEach(inp => inp.onchange = ()=>{
+    const v = parseFloat(inp.value);
+    if(!isNaN(v)){ P[inp.dataset.p]=v; saveParams(); calc(); }
+  });
+}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k = el.getAttribute('data-i18n');
+    if(!I18N[lang][k]) return;
+    if(k==='result'){ el.innerHTML = I18N[lang][k] + ' <span class="pill" id="resPill"></span>'; }
+    else { el.textContent = I18N[lang][k]; }
+  });
+  document.querySelectorAll('[data-i18n-opt]').forEach(el=>{
+    const k = el.getAttribute('data-i18n-opt');
+    if(I18N[lang][k]) el.textContent = I18N[lang][k];
+  });
+  $$('footNote').textContent = t('foot');
+  $$('langRu').classList.toggle('on',lang==='ru');
+  $$('langEn').classList.toggle('on',lang==='en');
+}
+
+/* ============================================================
+   MAIN CALC
+============================================================ */
+function calc(){
+  const inputMonthly = parseFloat($$('netInput').value)||0;
+  const mode = $$('modeInput').value; // net | gross | total
+  const cur = $$('curInput').value; // USD|EUR
+  const local = LOCATIONS[state.loc].local;
+  const engine = getEngine();
+
+  const inputAnnualLocal = conv(inputMonthly*12, cur, local);
+  let G;
+  if(mode==='gross')      G = inputAnnualLocal;
+  else if(mode==='total') G = solveGrossFromTotal(inputAnnualLocal, engine);
+  else                    G = solveGross(inputAnnualLocal, engine);
+  const res = engine(G);
+
+  const netAnnualLocal = res.net;
+  const totalM = conv(res.total, local, cur)/12;
+  const netM = conv(res.net, local, cur)/12;
+
+  $$('rNet').textContent = fmt(netM, cur);
+  $$('rGross').textContent = fmt(conv(G,local,cur)/12, cur);
+  $$('rTotal').textContent = fmt(totalM, cur);
+  $$('rNetY').textContent = fmt(netM*12,cur)+' '+t('peryear');
+  $$('rGrossY').textContent = fmt(conv(G,local,cur)/12*12,cur)+' '+t('peryear');
+  $$('rTotalY').textContent = fmt(totalM*12,cur)+' '+t('peryear');
+  const pill = $$('resPill'); if(pill) pill.textContent = t('locs')[state.loc]+' · '+t('types')[state.type];
+
+  // tax table
+  const tn = t('taxNames');
+  const empItems = res.items.filter(i=>i.side==='e' && i.amount>0.005);
+  const erItems = res.items.filter(i=>i.side==='r' && i.amount>0.005);
+  let html = '';
+  const rowsFor = items => items.map(i=>{
+    const m = conv(i.amount,local,cur)/12;
+    const mLoc = i.amount/12;
+    return `<tr class="sub"><td>${tn[i.key]||i.key}</td><td>${i.rate}</td><td>${fmt2(m,cur)} <span class="muted" style="font-size:11.5px">(${fmt2(mLoc,local)})</span></td></tr>`;
+  }).join('');
+  const sum = items => items.reduce((a,i)=>a+i.amount,0);
+  if(empItems.length){
+    html += `<tr><td colspan="2" style="font-weight:700">${t('empTaxes')}</td><td style="font-weight:700">${fmt2(conv(sum(empItems),local,cur)/12,cur)}</td></tr>` + rowsFor(empItems);
+  }
+  if(erItems.length){
+    html += `<tr><td colspan="2" style="font-weight:700">${t('erTaxes')}</td><td style="font-weight:700">${fmt2(conv(sum(erItems),local,cur)/12,cur)}</td></tr>` + rowsFor(erItems);
+  }
+  const allTax = sum(res.items);
+  const burden = res.total>0 ? allTax/res.total*100 : 0;
+  html += `<tr class="tot"><td colspan="2">${t('totTaxes')} <span class="muted" style="font-weight:400">· ${t('burden')}: ${burden.toFixed(1)}%</span></td><td>${fmt2(conv(allTax,local,cur)/12,cur)}</td></tr>`;
+  $$('taxBody').innerHTML = html;
+
+  // warnings (red = режим неприменим, жёлтое = информация)
+  const warn = $$('warnBox'); warn.style.display='none'; warn.textContent=''; warn.classList.remove('red');
+  if(state.loc==='cy' && res.dedCut){
+    warn.textContent = t('cyDedCut'); warn.style.display='block';
+  }
+  if(state.loc==='cy' && res.dedCapped){
+    warn.textContent = (warn.textContent?warn.textContent+' ':'') + t('cyDedCapped'); warn.style.display='block';
+  }
+  if(state.loc==='ru' && state.type==='selfemp' && G > P.ru_npd_limit){
+    warn.textContent = t('warnNPD'); warn.style.display='block'; warn.classList.add('red');
+  }
+  if(state.loc==='am' && G > 115000000){
+    warn.textContent = t('warnAM'); warn.style.display='block'; warn.classList.add('red');
+  }
+  if(state.loc==='ge' && G > P.ge_limit){
+    warn.textContent = t('warnGE'); warn.style.display='block';
+  }
+
+  // note: local-currency summary
+  let noteHtml = `Net: <b>${fmt2(netAnnualLocal/12,local)}</b> · Gross: <b>${fmt2(G/12,local)}</b> · Total: <b>${fmt2(res.total/12,local)}</b> / ${lang==='ru'?'мес':'mo'} (${t('inLocal')}, ${local})`;
+  if(state.loc==='cy' && res.dedSum>0){
+    noteHtml += `<br>${lang==='ru'?'Применены вычеты 2026':'2026 deductions applied'}: <b>−€${res.dedSum.toLocaleString()}</b> ${lang==='ru'?'из налогооблагаемой базы / год':'from taxable income / yr'}`;
+  }
+  $$('noteBox').innerHTML = noteHtml;
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+$$('langRu').onclick = ()=>{ lang='ru'; localStorage.setItem('sc_lang','ru'); applyI18n(); renderLocs(); renderTypes(); renderRates(); renderFx(); calc(); };
+$$('langEn').onclick = ()=>{ lang='en'; localStorage.setItem('sc_lang','en'); applyI18n(); renderLocs(); renderTypes(); renderRates(); renderFx(); calc(); };
+$$('netInput').oninput = calc;
+$$('modeInput').onchange = calc;
+$$('curInput').onchange = calc;
+$$('cyExempt').onchange = calc;
+$$('cyKids').oninput = calc;
+$$('cyHousing').oninput = calc;
+$$('cyGreen').oninput = calc;
+$$('cyIns').oninput = calc;
+$$('cySpouse').oninput = calc;
+$$('cySingle').onchange = calc;
+$$('amRegime').onchange = calc;
+$$('fxRefresh').onclick = fetchFx;
+$$('fxReset').onclick = ()=>{ fxOverrides={}; localStorage.removeItem('sc_fx_over'); renderFx(); calc(); };
+
+applyI18n(); renderLocs(); renderTypes(); renderExtras(); renderRates(); renderFx(); calc();
+fetchFx();
+</script>
+</body>
+</html>
