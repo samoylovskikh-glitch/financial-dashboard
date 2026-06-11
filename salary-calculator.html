@@ -25,7 +25,7 @@
   .grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
   @media(max-width:880px){.grid{grid-template-columns:1fr}}
   .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
-  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px}
+  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
   select,input[type=number],input[type=text]{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:15px;background:#fff;color:var(--ink);outline:none;transition:border .15s}
   select:focus,input:focus{border-color:var(--accent)}
@@ -40,17 +40,22 @@
   @media(max-width:560px){.bigres{grid-template-columns:1fr}}
   .res{border-radius:14px;padding:16px;border:1px solid var(--line)}
   .res .t{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-  .res .v{font-size:24px;font-weight:800;letter-spacing:-.5px}
+  .res .v{font-size:20px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .res .s{font-size:12px;color:var(--muted);margin-top:4px}
+  .res .annual{margin-top:6px;font-variant-numeric:tabular-nums}
   .res.net{background:#ecfdf5;border-color:#bbe9d4}.res.net .t{color:var(--green)}
   .res.gross{background:#eef2ff;border-color:#cdd8ff}.res.gross .t{color:var(--accent)}
   .res.total{background:#fdf3e7;border-color:#f3ddbe}.res.total .t{color:var(--amber)}
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:1.5px solid var(--line)}
-  th:last-child,td:last-child{text-align:right}
-  td{padding:9px 6px;border-bottom:1px solid var(--line)}
-  tr.sub td{color:var(--muted);font-size:13px}
-  tr.tot td{font-weight:800;border-top:2px solid var(--ink);border-bottom:0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:8px;border-bottom:1.5px solid var(--line)}
+  th:last-child,th:nth-child(3){text-align:right}
+  td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .subloc{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px}
+  td.rate{color:var(--muted);font-size:12px;white-space:nowrap}
+  tr.grp td{background:#f4f6fb;font-weight:700;font-size:12.5px;border-bottom:1px solid var(--line)}
+  tr.sub td:first-child{color:var(--muted);font-size:13px;padding-left:14px}
+  tr.tot td{font-weight:800;border-top:2px solid var(--ink);border-bottom:0;background:#fff}
   .pill{display:inline-block;background:var(--chip);color:var(--accent);font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;margin-left:6px}
   .note{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:14px;background:#f8f9fd;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
   .warn{font-size:12.5px;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px 12px;margin-top:12px;display:none}
@@ -107,6 +112,19 @@
         <div>
           <label data-i18n="currency">Валюта</label>
           <select id="curInput"><option value="USD">USD $</option><option value="EUR">EUR €</option></select>
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label data-i18n="bonusyr">Бонус в год (в выбранном виде)</label>
+          <input type="number" id="bonusInput" value="0" min="0" step="100">
+        </div>
+        <div>
+          <label data-i18n="m13">13-я зарплата</label>
+          <select id="m13Input">
+            <option value="no" data-i18n-opt="m13no">Нет</option>
+            <option value="yes" data-i18n-opt="m13yes">Да (12+1 платёж)</option>
+          </select>
         </div>
       </div>
 
@@ -187,7 +205,8 @@
       </div>
 
       <table id="taxTable">
-        <thead><tr><th data-i18n="thtax">Налог / взнос</th><th data-i18n="thrate">Ставка</th><th data-i18n="thmonth">В месяц</th></tr></thead>
+        <colgroup><col style="width:34%"><col style="width:13%"><col style="width:27%"><col style="width:26%"></colgroup>
+        <thead><tr><th data-i18n="thtax">Налог / взнос</th><th data-i18n="thrate">Ставка</th><th data-i18n="thmonth">В месяц</th><th data-i18n="thyear">В год</th></tr></thead>
         <tbody id="taxBody"></tbody>
       </table>
 
@@ -210,6 +229,7 @@ const I18N = {
     params:'Параметры', location:'Локация', hiretype:'Способ найма',
     netsalary:'Сумма в месяц', currency:'Валюта',
     inputmode:'Рассчитывать от', modenet:'Net — на руки', modegross:'Gross — официальная зарплата', modetotal:'Total — бюджет компании',
+    bonusyr:'Бонус в год (в выбранном виде)', m13:'13-я зарплата', m13no:'Нет', m13yes:'Да (12+1 платёж)', thyear:'В год',
     cyexempt:'Налоговая льгота (Кипр)', exnone:'Без льготы', ex20:'20% (макс €8 550) — новый резидент', ex50:'50% — доход от €55 000/год',
     cykids:'Дети-иждивенцы (до 18; студенты — до 24)', cyhousing:'Ипотека/аренда, €/год (макс 2 000)', cygreen:'Энергоэфф./EV, €/год (макс 1 000)', cyins:'Страхование, €/год (макс 500)',
     cyspouse:'Доход супруга(и) gross, €/год', cysingle:'Одинокий родитель', optno:'Нет', optyes:'Да (вычет на детей ×2)',
@@ -245,6 +265,7 @@ const I18N = {
     params:'Parameters', location:'Location', hiretype:'Type of contract',
     netsalary:'Amount per month', currency:'Currency',
     inputmode:'Calculate from', modenet:'Net — take-home', modegross:'Gross — official salary', modetotal:'Total — company budget',
+    bonusyr:'Bonus per year (same basis as input)', m13:'13th salary', m13no:'No', m13yes:'Yes (12+1 payments)', thyear:'Per year',
     cyexempt:'Tax exemption (Cyprus)', exnone:'No exemption', ex20:'20% (max €8,550) — new resident', ex50:'50% — income over €55,000/yr',
     cykids:'Dependent children (under 18; students — up to 24)', cyhousing:'Mortgage/rent, €/yr (max 2,000)', cygreen:'Green/EV, €/yr (max 1,000)', cyins:'Insurance, €/yr (max 500)',
     cyspouse:'Spouse gross income, €/yr', cysingle:'Single parent', optno:'No', optyes:'Yes (child deduction ×2)',
@@ -639,45 +660,60 @@ function calc(){
   const local = LOCATIONS[state.loc].local;
   const engine = getEngine();
 
-  const inputAnnualLocal = conv(inputMonthly*12, cur, local);
-  let G;
-  if(mode==='gross')      G = inputAnnualLocal;
-  else if(mode==='total') G = solveGrossFromTotal(inputAnnualLocal, engine);
-  else                    G = solveGross(inputAnnualLocal, engine);
-  const res = engine(G);
+  const M = $$('m13Input').value==='yes' ? 13 : 12;  // 13-я зарплата: 13 платежей в год
+  const bonusL = conv(Math.max(0, parseFloat($$('bonusInput').value)||0), cur, local); // годовой бонус (gross)
 
-  const netAnnualLocal = res.net;
-  const totalM = conv(res.total, local, cur)/12;
-  const netM = conv(res.net, local, cur)/12;
+  const inputAnnualLocal = conv(inputMonthly*M, cur, local);
+  let Gb;
+  if(mode==='gross')      Gb = inputAnnualLocal;
+  else if(mode==='total') Gb = solveGrossFromTotal(inputAnnualLocal, engine);
+  else                    Gb = solveGross(inputAnnualLocal, engine);
+  const resB = engine(Gb);                      // базовая зарплата — месячная колонка
+  // Бонус вводится в том же виде, что и основная сумма (net / gross / total)
+  let Gt = Gb;
+  if(bonusL>0){
+    if(mode==='gross')      Gt = Gb + bonusL;
+    else if(mode==='total') Gt = solveGrossFromTotal(resB.total + bonusL, engine);
+    else                    Gt = solveGross(resB.net + bonusL, engine);
+  }
+  const resT = bonusL>0 ? engine(Gt) : resB;    // весь год с бонусом — годовая колонка
+  const G = Gt, res = resT;                     // для блока предупреждений
+  const netAnnualLocal = resB.net;
 
-  $$('rNet').textContent = fmt(netM, cur);
-  $$('rGross').textContent = fmt(conv(G,local,cur)/12, cur);
-  $$('rTotal').textContent = fmt(totalM, cur);
-  $$('rNetY').textContent = fmt(netM*12,cur)+' '+t('peryear');
-  $$('rGrossY').textContent = fmt(conv(G,local,cur)/12*12,cur)+' '+t('peryear');
-  $$('rTotalY').textContent = fmt(totalM*12,cur)+' '+t('peryear');
+  const cM = a => conv(a,local,cur)/M;          // за один платёж
+  const cY = a => conv(a,local,cur);            // за год
+
+  $$('rNet').textContent = fmt(cM(resB.net), cur);
+  $$('rGross').textContent = fmt(cM(Gb), cur);
+  $$('rTotal').textContent = fmt(cM(resB.total), cur);
+  $$('rNetY').textContent = fmt(cY(resT.net),cur)+' '+t('peryear');
+  $$('rGrossY').textContent = fmt(cY(Gt),cur)+' '+t('peryear');
+  $$('rTotalY').textContent = fmt(cY(resT.total),cur)+' '+t('peryear');
   const pill = $$('resPill'); if(pill) pill.textContent = t('locs')[state.loc]+' · '+t('types')[state.type];
 
-  // tax table
+  // tax table: месячная колонка — базовая зарплата за 1 платёж, годовая — весь год с бонусом
   const tn = t('taxNames');
-  const empItems = res.items.filter(i=>i.side==='e' && i.amount>0.005);
-  const erItems = res.items.filter(i=>i.side==='r' && i.amount>0.005);
+  const byKey = {}; resT.items.forEach(i=>{byKey[i.key]=i.amount;});
+  const vis = i => i.amount>0.005 || (byKey[i.key]||0)>0.005;
+  const empItems = resB.items.filter(i=>i.side==='e' && vis(i));
+  const erItems = resB.items.filter(i=>i.side==='r' && vis(i));
   let html = '';
   const rowsFor = items => items.map(i=>{
-    const m = conv(i.amount,local,cur)/12;
-    const mLoc = i.amount/12;
-    return `<tr class="sub"><td>${tn[i.key]||i.key}</td><td>${i.rate}</td><td>${fmt2(m,cur)} <span class="muted" style="font-size:11.5px">(${fmt2(mLoc,local)})</span></td></tr>`;
+    const yr = byKey[i.key]!==undefined ? byKey[i.key] : i.amount;
+    return `<tr class="sub"><td>${tn[i.key]||i.key}</td><td class="rate">${i.rate}</td><td class="num">${fmt2(cM(i.amount),cur)}<span class="subloc">${fmt2(i.amount/M,local)}</span></td><td class="num">${fmt2(cY(yr),cur)}</td></tr>`;
   }).join('');
   const sum = items => items.reduce((a,i)=>a+i.amount,0);
+  const sumT = side => resT.items.filter(i=>i.side===side).reduce((a,i)=>a+i.amount,0);
   if(empItems.length){
-    html += `<tr><td colspan="2" style="font-weight:700">${t('empTaxes')}</td><td style="font-weight:700">${fmt2(conv(sum(empItems),local,cur)/12,cur)}</td></tr>` + rowsFor(empItems);
+    html += `<tr class="grp"><td colspan="2">${t('empTaxes')}</td><td class="num">${fmt2(cM(sum(empItems)),cur)}</td><td class="num">${fmt2(cY(sumT('e')),cur)}</td></tr>` + rowsFor(empItems);
   }
   if(erItems.length){
-    html += `<tr><td colspan="2" style="font-weight:700">${t('erTaxes')}</td><td style="font-weight:700">${fmt2(conv(sum(erItems),local,cur)/12,cur)}</td></tr>` + rowsFor(erItems);
+    html += `<tr class="grp"><td colspan="2">${t('erTaxes')}</td><td class="num">${fmt2(cM(sum(erItems)),cur)}</td><td class="num">${fmt2(cY(sumT('r')),cur)}</td></tr>` + rowsFor(erItems);
   }
-  const allTax = sum(res.items);
-  const burden = res.total>0 ? allTax/res.total*100 : 0;
-  html += `<tr class="tot"><td colspan="2">${t('totTaxes')} <span class="muted" style="font-weight:400">· ${t('burden')}: ${burden.toFixed(1)}%</span></td><td>${fmt2(conv(allTax,local,cur)/12,cur)}</td></tr>`;
+  const allTaxB = sum(resB.items);
+  const allTaxT = resT.items.reduce((a,i)=>a+i.amount,0);
+  const burden = resT.total>0 ? allTaxT/resT.total*100 : 0;
+  html += `<tr class="tot"><td colspan="2">${t('totTaxes')}<span class="muted" style="font-weight:400;display:block;font-size:11.5px">${t('burden')}: ${burden.toFixed(1)}%</span></td><td class="num">${fmt2(cM(allTaxB),cur)}</td><td class="num">${fmt2(cY(allTaxT),cur)}</td></tr>`;
   $$('taxBody').innerHTML = html;
 
   // warnings (red = режим неприменим, жёлтое = информация)
@@ -699,7 +735,7 @@ function calc(){
   }
 
   // note: local-currency summary
-  let noteHtml = `Net: <b>${fmt2(netAnnualLocal/12,local)}</b> · Gross: <b>${fmt2(G/12,local)}</b> · Total: <b>${fmt2(res.total/12,local)}</b> / ${lang==='ru'?'мес':'mo'} (${t('inLocal')}, ${local})`;
+  let noteHtml = `${lang==='ru'?'В месяц':'Per month'}: Net <b>${fmt2(netAnnualLocal/M,local)}</b> · Gross <b>${fmt2(Gb/M,local)}</b> · Total <b>${fmt2(resB.total/M,local)}</b> (${t('inLocal')}, ${local})<br>${lang==='ru'?'В год':'Per year'}: Net <b>${fmt2(resT.net,local)}</b> · Gross <b>${fmt2(Gt,local)}</b> · Total <b>${fmt2(resT.total,local)}</b>`;
   if(state.loc==='cy' && res.dedSum>0){
     noteHtml += `<br>${lang==='ru'?'Применены вычеты 2026':'2026 deductions applied'}: <b>−€${res.dedSum.toLocaleString()}</b> ${lang==='ru'?'из налогооблагаемой базы / год':'from taxable income / yr'}`;
   }
@@ -713,6 +749,8 @@ $$('langRu').onclick = ()=>{ lang='ru'; localStorage.setItem('sc_lang','ru'); ap
 $$('langEn').onclick = ()=>{ lang='en'; localStorage.setItem('sc_lang','en'); applyI18n(); renderLocs(); renderTypes(); renderRates(); renderFx(); calc(); };
 $$('netInput').oninput = calc;
 $$('modeInput').onchange = calc;
+$$('bonusInput').oninput = calc;
+$$('m13Input').onchange = calc;
 $$('curInput').onchange = calc;
 $$('cyExempt').onchange = calc;
 $$('cyKids').oninput = calc;
